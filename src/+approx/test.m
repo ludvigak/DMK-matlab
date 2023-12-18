@@ -72,6 +72,20 @@ classdef test < matlab.unittest.TestCase
             y2 = approx.kronmat_apply(A, x, 4);
             testCase.verifyEqual(y1, y2, 'reltol', eps(p));
         end
+
+        function chebevalmat3_fast(testCase)
+            p = 30;
+            N = 100;
+            x = rand(N, 1)*2 - 1;
+            y = rand(N, 1)*2 - 1;
+            z = rand(N, 1)*2 - 1;
+            E = approx.chebevalmat3(x, y, z, p);
+            ET = transpose(E);
+            f = rand(100, 1);
+            g1 = ET*f;
+            g2 = approx.chebevalmat3_trans_apply(x, y, z, p, f);
+            testCase.verifyEqual(g1, g2, 'abstol', eps(N));
+        end
         
         function chebInterp2D(testCase)
             p = 30;
@@ -116,8 +130,6 @@ classdef test < matlab.unittest.TestCase
             xq = (chebpts(q, 1)+1)/2;
             yq = (chebpts(q+1, 1)-1)/2;
             zq = chebpts(q+2, 1)/2;
-            %yq = xq;
-            %zq = xq;
             Ex = approx.chebevalmat(xq, p);
             Ey = approx.chebevalmat(yq, p);
             Ez = approx.chebevalmat(zq, p);
