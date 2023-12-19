@@ -47,7 +47,7 @@ function test_upward_pass(testCase)
     N = 64;
     p = 32;
     max_level = 1;
-    points = 2*rand(N, 3)-1;
+    points = rand(N, 3)-1/2;
     charges = rand(N, 1);
     rvec = chebpts(p, 1);
     tree = octree(points, max_level);
@@ -65,7 +65,7 @@ function test_upward_pass(testCase)
         target = c + s; % half-box separation from center
         u = laplace_kernel(target, box_points, box_charges);
         u_proxy = laplace_kernel(target, box_proxy_points, box_proxy_charges);
-        testCase.verifyEqual(u, u_proxy, 'abstol', eps(100));
+        testCase.verifyEqual(u, u_proxy, 'reltol', eps(100));
     end
 end
 

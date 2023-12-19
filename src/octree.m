@@ -24,7 +24,7 @@ classdef octree < handle
             tree.boxLevels = 0;
             tree.boxParents = 0;
             tree.boxChildren = {[]};
-            tree.boxCorners = [-1 -1 -1 1 1 1];
+            tree.boxCorners = [-1 -1 -1 1 1 1]/2;
             tree.boxPoints = {(1:tree.N)'};
             tree.pointBoxes = ones(tree.N, 1);
             tree.numBoxes = 1;
