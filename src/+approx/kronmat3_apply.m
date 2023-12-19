@@ -1,6 +1,7 @@
 function y = kronmat3_apply(A, B, C, x)
 % Fast evaluation of 3-dimensional Kronecker tensor product matrix to vector x
-% y = (A \otimes B \otimes C) * x
+%     y = (A \otimes B \otimes C) * x
+% using level 3 BLAS operations as much as possible
     [m1, n1] = size(A);
     [m2, n2] = size(B);
     [m3, n3] = size(C);

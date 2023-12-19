@@ -100,12 +100,29 @@ classdef octree < handle
         end
 
         function idxs = box_point_idxs(tree, boxNo)
-            idxs = tree.boxPoints{boxNo};
+            if isempty(tree.boxChildren{boxNo})
+                idxs = tree.boxPoints{boxNo};
+                return
+            end
+            child_idxs = cell(1, 8);
+            for c=1:8
+                child = tree.boxChildren{boxNo}(c);
+                child_idxs{c} = tree.box_point_idxs(child);
+            end
+            idxs = vertcat(child_idxs{:});
         end
         
         function points = box_points(tree, boxNo)
             idxs = tree.box_point_idxs(boxNo);
             points = tree.points(idxs, :);
+        end
+
+        function grid = box_grid(tree, boxNo, rvec)
+        % Return box tensor product grid with sides rvec
+            [xp, yp, zp] = ndgrid(rvec, rvec, rvec);
+            c = tree.box_center(boxNo);
+            s = tree.box_size(boxNo);
+            grid = [xp(:), yp(:), zp(:)].*s/2 + c;
         end
     end
 end

@@ -6,6 +6,11 @@ classdef test < matlab.unittest.TestCase
     end
     
     methods (Test)
+        function chebvander(testCase)
+            [~, V] = approx.chebvander(10);
+            testCase.verifyEqual(cond(V), sqrt(2), 'abstol', eps(100));
+        end
+        
         function chebInterp1D(testCase)
             p = 30;
             [rvec, V] = approx.chebvander(p);
@@ -15,7 +20,7 @@ classdef test < matlab.unittest.TestCase
             finterp = E*(V\f(rvec));
             testCase.verifyEqual(finterp, f(x), 'reltol', eps(100));
         end
-
+        
         function kronMatApply2Dsame(testCase)
             p = 10;
             A = rand(p, p);
