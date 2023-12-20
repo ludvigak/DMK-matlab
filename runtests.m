@@ -1,4 +1,5 @@
 clear all
+init
 import matlab.unittest.TestSuite
 tic
 

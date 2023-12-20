@@ -8,6 +8,7 @@ classdef octree < handle
         boxLevels
         boxParents
         boxChildren
+        boxColleagues
         boxCorners
         boxPoints
         pointBoxes
@@ -31,6 +32,8 @@ classdef octree < handle
             tree.verbose = false;
             % Recursive divide
             divide_box(tree, 1);
+            % Finish up
+            tree.create_colleague_lists();
         end
 
         function divide_box(tree, boxNo)
@@ -83,6 +86,27 @@ classdef octree < handle
             end
         end
 
+        function create_colleague_lists(tree)
+            centers = tree.box_center(1:tree.numBoxes);
+            tree.boxColleagues = cell(1, tree.numBoxes);
+            for l=0:tree.maxLevel
+                rl = 1/2^l;
+                level_mask = (tree.boxLevels == l);
+                level_centers = centers(level_mask, :);
+                level_boxes = find(level_mask);
+                idx = knnsearch(level_centers, level_centers, 'K', 27);
+                idx = level_boxes(idx);
+                for i=1:numel(level_boxes)
+                    box = level_boxes(i);
+                    nearest = idx(i, :);
+                    dist = max(abs( tree.box_center(box) - tree.box_center(nearest)),...
+                               [], 2);
+                    nearest = nearest(dist < rl*1.000001);
+                    tree.boxColleagues{box} = nearest;
+                end
+            end
+        end
+
         function idx_list = nonempty_leafs(tree)
             mask = false(1, tree.numBoxes);
             for i=1:tree.numBoxes
@@ -92,7 +116,7 @@ classdef octree < handle
         end
 
         function c = box_center(tree, boxNo)
-            c = (tree.boxCorners(boxNo, 4:6) + tree.boxCorners(boxNo, 1:3)) / 2;            
+            c = (tree.boxCorners(boxNo(:), 4:6) + tree.boxCorners(boxNo(:), 1:3)) / 2;
         end
         
         function s = box_size(tree, boxNo)

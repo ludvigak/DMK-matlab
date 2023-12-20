@@ -5,6 +5,7 @@ function u = laplace_kernel(target, points, charges)
     assert(size(target, 1)==1)
     assert(size(target, 2)==3)
     r = sqrt(sum((target - points).^2, 2));
-    u = sum(charges./r);
+    mask = (r ~= 0);
+    u = sum(charges(mask)./r(mask));
 end
 
