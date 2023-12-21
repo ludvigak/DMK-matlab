@@ -26,7 +26,7 @@ for tol = tol_list
     assert(~any(xeval==0))
     Kref = K(xeval);
 
-    plist = 1:50;
+    plist = 1:65;
     interp_err = 0*plist;
     for i=1:numel(plist)
         p = plist(i);
@@ -50,6 +50,11 @@ for tol = tol_list
     end
 end
 
+for t=tol_plot
+    plot(plist, t*plist.^0, '--k')
+end
+
 figure(2);clf
 semilogx(tol_achieved, p_first, '.-')
+hold on
 grid on

@@ -10,6 +10,6 @@ function y = kronmat3_apply(A, B, C, x)
     for i=1:n1
         K(:, i) = approx.kronmat2_apply(B, C, X(:, i));
     end
-    Y = K * A';
+    Y = K * A.';
     y = reshape(Y, m1*m2*m3, 1);  
 end
