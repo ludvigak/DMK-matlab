@@ -1,6 +1,6 @@
 function proxy_charges = init_proxy_charges(tree, charges, p)
 % DMK upward pass
-    Tc2p = precompute_child2parent(p);
+    Tc2p = operator_child2parent(p);
     proxy_charges = cell(1, tree.numBoxes);
     % Init with zeros
     for i=1:tree.numBoxes
@@ -43,10 +43,7 @@ function proxy_charges = init_proxy_charges(tree, charges, p)
                     child = children(i,j,k);
                     child_proxies = proxy_charges{child};
                     % Anterpolate
-                    UxT = Tc2p.UT{i};
-                    UyT = Tc2p.UT{j};
-                    UzT = Tc2p.UT{k};
-                    anterp_proxies = approx.kronmat3_apply(UzT, UyT, UxT, child_proxies);
+                    anterp_proxies = Tc2p(i, j, k, child_proxies);
                     proxy_charges{boxNo} = proxy_charges{boxNo} + anterp_proxies;
                 end
             end

@@ -4,45 +4,6 @@ tests = functiontests(localfunctions);
 end
 
 %% Test Functions
-function test_c2p_1d(testCase)
-    p = 30;
-    Tc2p = precompute_child2parent(p);    
-    rvec = chebpts(p, 1);
-    x1 = (rvec-1)/2;
-    x2 = (rvec+1)/2;
-    f = @(x) exp(-(x+1).^2);
-    finterp1 = Tc2p.UT{1}' * f(rvec);
-    finterp2 = Tc2p.UT{2}' * f(rvec);
-    testCase.verifyEqual(finterp1, f(x1), 'reltol', eps(100));
-    testCase.verifyEqual(finterp2, f(x2), 'reltol', eps(100));    
-end
-
-function test_interp_c2p(testCase)
-    % Test that anterp matrices actually interpolate from parent to child
-    p = 25;
-    rvec = chebpts(p, 1);
-    Tc2p = precompute_child2parent(p);    
-    tree = octree([0,0,0], 1);
-    box_idx = 1;
-    box_proxy_points = tree.box_grid(box_idx, rvec);
-    for k=1:2
-        for j=1:2
-            for i=1:2
-                child_idx = tree.boxChildren{box_idx}(i,j,k);
-                child_proxy_points = tree.box_grid(child_idx, rvec);
-                f = @(r) exp(-(r(:,1) + r(:,2)/2 + r(:,3)/3).^2);
-                fb = f(box_proxy_points);
-                fc = f(child_proxy_points);
-                UxT = Tc2p.UT{i};
-                UyT = Tc2p.UT{j};
-                UzT = Tc2p.UT{k};
-                fi = approx.kronmat3_apply(UzT', UyT', UxT', fb);                
-                testCase.verifyEqual(fi,fc, 'abstol', eps(100));
-            end
-        end
-    end           
-end
-
 function test_upward_pass(testCase)
     N = 64;
     p = 32;
