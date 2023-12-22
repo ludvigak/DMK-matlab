@@ -11,8 +11,35 @@ target = points(targ_idx,:)
 %charges(targ_idx) = 0;
 
 p = 40;
+tol = 1e-8;
+sigma_0 = 1/sqrt(log(1/tol));
+
+% Setup planewave ops
+r0 = 1;
+D = 3*r0;
+h0 = 2*pi/D;
+K0 = 4/1 * log(1/tol);
+nf = ceil(K0/h0);
+Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
+Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
+Tpwshift = operator_planewave_shift(h0, nf);
+Tp2c = operator_parent2child(p);
+
+disp('=== Error estimates: ===')
 [rvec, V] = approx.chebvander(p);
 ViT = transpose(inv(V));
+r = @(x) abs(x-0.01);
+D0 = @(x) (erf(r(x)/(sigma_0/2))-erf(r(x)/sigma_0))./r(x);
+xeval = linspace(-0.5, 0.5)';
+Di = approx.chebevalmat(2*xeval, p)*(V\D0(rvec/2));
+fprintf("interp  = %.2e\n", norm(Di-D0(xeval), inf));
+fprintf("trunc_R = %.2e\n", erfc(1/sigma_0));
+fprintf("trunc_D = %.2e\n", (erf(1/(sigma_0/2))-erf(1/sigma_0)));
+disp('================================')
+
+
+
+
 
 disp('* Build tree')
 tic
@@ -26,36 +53,63 @@ proxy_charges = init_proxy_charges(tree, charges, p);
 toc
 
 
-tol = 1e-8;
-sigma_0 = 1/sqrt(log(1/tol));
-
-% Setup planewave ops
-r0 = 1;
-D = 3*r0;
-h0 = 2*pi/D;
-K0 = 4/1 * log(1/tol);
-nf = ceil(K0/h0);
-Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
-Tpwshift = operator_planewave_shift(h0, nf);
-
+disp('* Downward pass')
+tic
+% Downward pass
+outgoing_expansions = cell(1, tree.numBoxes);
+incoming_expansions = cell(1, tree.numBoxes);
+local_expansions    = cell(1, tree.numBoxes);
+for l=0:max_level-1
+    rl = 1/2^l;
+    box_list = find(tree.boxLevels==l);
+    Nlevel = numel(box_list); % Boxes on level
+    % Form outgoing
+    for idx=1:Nlevel
+        box = box_list(idx);
+        box_proxy_charges = proxy_charges{box};
+        outgoing_expansions{box} = Tprox2pw(box_proxy_charges, l);
+    end
+    % Collect incoming
+    for idx=1:Nlevel
+        box = box_list(idx);
+        clist = tree.boxColleagues{box};
+        incoming = zeros((2*nf+1)^3, 1);
+        for coll=clist
+            pw = outgoing_expansions{coll};
+            shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
+            incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
+        end
+        incoming_expansions{box} = incoming;
+        % Convert to local
+        local = Tpw2poly(incoming, l);
+        if isempty(local_expansions{box})
+            local_expansions{box} = local;
+        else
+            local_expansions{box} = local_expansions{box} + local;
+        end
+        % Shift to child
+        for k=1:2
+            for j=1:2
+                for i=1:2
+                    child = tree.boxChildren{box}(i,j,k);
+                    expa_child = Tp2c(i, j, k, local_expansions{box});
+                    local_expansions{child} = expa_child;
+                end
+            end
+        end
+    end
+end
+toc
 
 
 
 uref = laplace_kernel(target, points, charges);
 
-disp('=== Error estimates: ===')
-r = @(x) abs(x-0.01);
-D0 = @(x) (erf(r(x)/(sigma_0/2))-erf(r(x)/sigma_0))./r(x);
-xeval = linspace(-0.5, 0.5)';
-Di = approx.chebevalmat(2*xeval, p)*(V\D0(rvec/2));
-fprintf("interp  = %.2e\n", norm(Di-D0(xeval), inf));
-fprintf("trunc_R = %.2e\n", erfc(1/sigma_0));
-fprintf("trunc_D = %.2e\n", (erf(1/(sigma_0/2))-erf(1/sigma_0)));
-disp('================================')
 
 
 u = 0;
+ufar = 0;
+udiff = 0;
 % Single target eval
 home_box = tree.pointBoxes(targ_idx)
 box = home_box;
@@ -67,6 +121,7 @@ while box > 0
     sigma_l = sigma_0 / 2^l;
     sigma_lp1 = sigma_l / 2;
     clist = tree.boxColleagues{box};
+    incoming = zeros((2*nf+1)^3, 1);
     for coll=clist
         if l==tree.maxLevel
             idxs = tree.box_point_idxs(coll);
@@ -78,39 +133,53 @@ while box > 0
             uR = sum(Rl .* box_charges);
             u = u + uR;
         else
-            box_proxy_points = tree.box_grid(coll, rvec);
-            box_proxy_charges = proxy_charges{coll};
             if l==0
                 % W_0
+                box_proxy_points = tree.box_grid(coll, rvec);
+                box_proxy_charges = proxy_charges{coll};
                 r = sqrt(sum((target-box_proxy_points).^2, 2));
-                u = u + sum(erf(r/sigma_0)./r .* box_proxy_charges);
+                ufar = ufar + sum(erf(r/sigma_0)./r .* box_proxy_charges);
             end
-            % Add difference kernel
-            %udiff = laplace_diffkernel(target, box_proxy_points, box_proxy_charges, sigma_l);
+            % % Add difference kernel
+            % %udiff = laplace_diffkernel(target, box_proxy_points, box_proxy_charges, sigma_l);
 
-            % Compute box expansion
-            pw = Tprox2pw(box_proxy_charges, l);
-            % Shift it
-            shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
-            pw = Tpwshift(pw, shift(1), shift(2), shift(3));
-            % Eval    
-            lambda = Tpw2poly(pw, l);
-            scaled_target = (target-(tree.box_center(box)))*2/rl;
-            Ex = approx.chebevalmat(scaled_target(1), p);
-            Ey = approx.chebevalmat(scaled_target(2), p);
-            Ez = approx.chebevalmat(scaled_target(3), p);
-            udiff_expa = real( kron(Ez, kron(Ey, Ex))* lambda );
-            u = u+udiff_expa;
+            % % Compute box expansion
+            % pw = Tprox2pw(box_proxy_charges, l);
+            % % Shift it
+            % shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
+            % incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
         end
     end
+    %local_expa = Tpw2poly(incoming, l);
+    % if l < tree.maxLevel
+    %     local_expa = Tpw2poly(incoming_expansions{box}, l);
+    %     scaled_target = (target-(tree.box_center(box)))*2/rl;
+    %     Ex = approx.chebevalmat(scaled_target(1), p);
+    %     Ey = approx.chebevalmat(scaled_target(2), p);
+    %     Ez = approx.chebevalmat(scaled_target(3), p);
+    %     udiff_expa = real( kron(Ez, kron(Ey, Ex))* local_expa );
+    %     udiff = udiff+udiff_expa;
+    % end
+
+    
     if l==tree.maxLevel
         % Self interaction
-        u = u - charges(targ_idx)*2/(sqrt(pi)*sigma_l);
+        uself = - charges(targ_idx)*2/(sqrt(pi)*sigma_l);
     end
     
     % Next iteration: parent
     box = tree.boxParents(box);
 end
+
+scaled_target = (target-(tree.box_center(home_box)))*2*2^tree.maxLevel;
+Ex = approx.chebevalmat(scaled_target(1), p);
+Ey = approx.chebevalmat(scaled_target(2), p);
+Ez = approx.chebevalmat(scaled_target(3), p);
+udiff = real( kron(Ez, kron(Ey, Ex))* local_expansions{home_box} )
+udiff
+
+
+u = u+ufar+udiff+uself;
 
 
 

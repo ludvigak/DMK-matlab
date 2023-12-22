@@ -44,13 +44,15 @@ udiff_direct = charges'*D0;
 % hl = 4*pi/3 /FUDGE
 
 
-D = 3;
+D = 3*rl;
 hl = 2*pi/D
 
 Kl = 4/rl * log(1/tol)
 
 nf = ceil(Kl/hl)
 
+Kmax = hl*nf
+return
 % In Table 3.1 N_1^G is stated as 66 for tol=1e-9
 N1 = 2*nf+1 
 
