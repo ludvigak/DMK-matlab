@@ -6,7 +6,7 @@ end
 %% Test Functions
 
 
-function test_outgoing(testCase)
+function test_planeswaves(testCase)
     tol = 1e-9;
     p = 45;
     max_level = 3;
@@ -17,20 +17,20 @@ function test_outgoing(testCase)
     K0 = 4/1 * log(1/tol);
     nf = ceil(K0/h0);
     Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-    Tpw2poly = operator_planewave2local(p, h0, nf, max_level);
+    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
+    Tpwshift = operator_planewave_shift(h0, nf);
     for l = 0:max_level
         rl = 1/2^l;
         sigma_l = sigma_0 / 2^l;
-        sigma_lp1 = sigma_l / 2;
         hl = h0 / rl;
         Kl = 4/rl * log(1/tol);
         nf = ceil(Kl/hl);
         % Set up random sources in box [-1/2, 1/2]^3
-        N = 16;
+        N = 20;
         points =  rl*(rand(N, 3)-1/2);
         charges = rl*(rand(N, 1)-1/2);
         % Test sample point
-        x = rl*0.1; y = rl*0.2; z = rl*0.3;
+        target = rl*[0.4 0.2 0.3];
         % Setup Fourier vectors
         [m1, m2, m3] = ndgrid(-nf:nf, -nf:nf, -nf:nf);
         k1 = hl*m1(:);
@@ -42,16 +42,11 @@ function test_outgoing(testCase)
         % Source expansion
         kdoty = k1.*points(:, 1)' + k2.*points(:, 2)' + k3.*points(:, 3)';
         ghat = exp(-1i*kdoty) * charges;
-        kdotx = k1.*x + k2.*y + k3.*z;
+        kdotx = k1.*target(1) + k2.*target(2) + k3.*target(3);
         % Compute udiff
         udiff_fourier = real( (wl .* ghat).' * exp(1i*kdotx) );
-        % Compare to reference
-        r = sqrt( (points(:, 1)-x).^2 + ...
-                  (points(:, 2)-y).^2 + ...
-                  (points(:, 3)-z).^2 );
-        D0 = (erf(r/sigma_lp1) - erf(r/sigma_l))./r;
-        % u_diff computed directly
-        udiff_direct = charges'*D0;
+        % Compare to direct reference
+        udiff_direct = laplace_diffkernel(target, points, charges, sigma_l);
         % Compare direct and Fourier
         testCase.verifyEqual(udiff_fourier, udiff_direct, 'abstol', tol);
         % Form proxy charges:
@@ -59,16 +54,32 @@ function test_outgoing(testCase)
         % Convert proxy charges to outgoing
         Phi = Tprox2pw(proxy_charges, l);
         % Convert to incoming (same box)
-        Psi = wl.*Phi;
+        Psi = Phi;
         % Compare to directly computed incoming
-        testCase.verifyLessThan(norm(wl.*ghat-Psi, inf), tol);
+        testCase.verifyLessThan(norm(wl.*ghat-wl.*Psi, inf), tol);
         % Convert to local
         lambda = Tpw2poly(Psi, l);
         % Evaluate expansion at sample point
-        Ex = approx.chebevalmat(x*2/rl, p);
-        Ey = approx.chebevalmat(y*2/rl, p);
-        Ez = approx.chebevalmat(z*2/rl, p);
+        Ex = approx.chebevalmat(target(1)*2/rl, p);
+        Ey = approx.chebevalmat(target(2)*2/rl, p);
+        Ez = approx.chebevalmat(target(3)*2/rl, p);
         udiff_expa = real( kron(Ez, kron(Ey, Ex))* lambda );
         testCase.verifyEqual(udiff_expa, udiff_direct, 'abstol', tol);
+        % Shift sample point around together with expansions
+        for i=-1:1
+            for j=-1:1
+                for k=-1:1
+                    shift = [i j k];
+                    newCenter = rl*shift;                   
+                    Psi_shifted = Tpwshift(Psi, i, j, k);
+                    lambda_shifted = Tpw2poly(Psi_shifted, l);
+                    udiff_shifted = real( kron(Ez, kron(Ey, Ex))* lambda_shifted );
+                    udiff_shifted_direct = laplace_diffkernel(target - newCenter, points, charges, sigma_l);
+                    testCase.verifyEqual(udiff_shifted, ...
+                                         udiff_shifted_direct, ...
+                                         'abstol', tol);
+                end
+            end
+        end
     end
 end

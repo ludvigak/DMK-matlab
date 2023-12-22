@@ -29,6 +29,17 @@ toc
 tol = 1e-8;
 sigma_0 = 1/sqrt(log(1/tol));
 
+% Setup planewave ops
+r0 = 1;
+D = 3*r0;
+h0 = 2*pi/D;
+K0 = 4/1 * log(1/tol);
+nf = ceil(K0/h0);
+Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
+Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
+Tpwshift = operator_planewave_shift(h0, nf);
+
+
 
 
 uref = laplace_kernel(target, points, charges);
@@ -52,6 +63,7 @@ box = home_box;
 while box > 0
     box
     l = tree.boxLevels(box);
+    rl = 1/2^l;
     sigma_l = sigma_0 / 2^l;
     sigma_lp1 = sigma_l / 2;
     clist = tree.boxColleagues{box};
@@ -68,15 +80,27 @@ while box > 0
         else
             box_proxy_points = tree.box_grid(coll, rvec);
             box_proxy_charges = proxy_charges{coll};
-            r = sqrt(sum((target-box_proxy_points).^2, 2));
-            % K = D_{l}
-            K = (erf(r/sigma_lp1) - erf(r/sigma_l))./r;
             if l==0
-                % K += W_0
-                K = K + erf(r/sigma_0)./r;
+                % W_0
+                r = sqrt(sum((target-box_proxy_points).^2, 2));
+                u = u + sum(erf(r/sigma_0)./r .* box_proxy_charges);
             end
-            uK = sum(K .* box_proxy_charges);
-            u = u + uK;
+            % Add difference kernel
+            %udiff = laplace_diffkernel(target, box_proxy_points, box_proxy_charges, sigma_l);
+
+            % Compute box expansion
+            pw = Tprox2pw(box_proxy_charges, l);
+            % Shift it
+            shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
+            pw = Tpwshift(pw, shift(1), shift(2), shift(3));
+            % Eval    
+            lambda = Tpw2poly(pw, l);
+            scaled_target = (target-(tree.box_center(box)))*2/rl;
+            Ex = approx.chebevalmat(scaled_target(1), p);
+            Ey = approx.chebevalmat(scaled_target(2), p);
+            Ez = approx.chebevalmat(scaled_target(3), p);
+            udiff_expa = real( kron(Ez, kron(Ey, Ex))* lambda );
+            u = u+udiff_expa;
         end
     end
     if l==tree.maxLevel

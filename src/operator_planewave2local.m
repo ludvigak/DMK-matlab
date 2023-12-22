@@ -1,20 +1,25 @@
-function Tpw2poly = operator_planewave2local(p, h0, nf, max_level)
-    Minc = cell(1, max_level+1);
+function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0)
+    ViMinc = cell(1, max_level+1);
+    w      = cell(1, max_level+1);
     [rvec, V] = approx.chebvander(p);
-    Vi = inv(V);
     for l=0:max_level
         rl = 1/2.^l;
         hl = h0 / rl;
-        % Convert proxy charges to outgoing
+        sigma_l = sigma_0 / 2^l;
         k = hl*(-nf:nf)';
-        Minc{l+1} = exp(1i*rvec.*k'/2*rl);
+        Minc = exp(1i*rvec.*k'/2*rl);
+        ViMinc{l+1} = V\Minc;
+        [k1, k2, k3] = ndgrid(k, k, k);
+        Dlhat = laplace_diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
+        % w_l factor 
+        w{l+1} = 1/(2*pi)^3 * hl^3 * Dlhat;
     end
     function Lambda = apply(Psi, level)
     % Convert incoming expansion Psi to local expansion Lambda
-        % Evaluate incoming at proxy points
-        proxy_vals = approx.kronmat_apply(Minc{level+1}, Psi, 3);
-        % Convert to local expansion
-        Lambda = approx.kronmat_apply(Vi, proxy_vals, 3);
+        wl = w{level+1}; % Fourier kernel scaling
+        uhat = wl.*Psi;
+        % Evaluate incoming at proxy points and convert to local expansion
+        Lambda = approx.kronmat_apply(ViMinc{level+1}, uhat, 3);
     end
     Tpw2poly = @apply;
 end
