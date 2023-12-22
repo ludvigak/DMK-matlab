@@ -7,7 +7,6 @@ function proxy_charges = init_proxy_charges(tree, charges, p)
         proxy_charges{i} = zeros(p^3, 1);
     end
     [~, V] = approx.chebvander(p);
-    ViT = transpose(inv(V));
     % Fill in at leaf boxes
     for leaf_idx=tree.nonempty_leafs()
         idxs = tree.box_point_idxs(leaf_idx);
@@ -16,13 +15,7 @@ function proxy_charges = init_proxy_charges(tree, charges, p)
         c = tree.box_center(leaf_idx);
         s = tree.box_size(leaf_idx);
         scaled_points = (box_points-c)*2./s;
-        % Evaluation matrix for nonuniform points
-        proj = approx.chebevalmat3_trans_apply(...
-            scaled_points(:, 1), ...
-            scaled_points(:, 2), ...
-            scaled_points(:, 3), ...
-            p, box_charges);
-        proxy_charges{leaf_idx}(:) = approx.kronmat_apply(ViT, proj, 3);
+        proxy_charges{leaf_idx}(:) = points2proxy(scaled_points, box_charges, p);
     end  
     % Recursively anterpolate up the tree
     collect_proxies(1);
