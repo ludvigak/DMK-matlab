@@ -20,6 +20,7 @@ D = 3*r0;
 h0 = 2*pi/D;
 K0 = 4/1 * log(1/tol);
 nf = ceil(K0/h0);
+Nf = 2*nf+1;
 Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
 Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
 Tpwshift = operator_planewave_shift(h0, nf);
@@ -55,53 +56,9 @@ toc
 
 disp('* Downward pass')
 tic
-% Downward pass
-outgoing_expansions = cell(1, tree.numBoxes);
-incoming_expansions = cell(1, tree.numBoxes);
-local_expansions    = cell(1, tree.numBoxes);
-for l=0:max_level-1
-    rl = 1/2^l;
-    box_list = find(tree.boxLevels==l);
-    Nlevel = numel(box_list); % Boxes on level
-    % Form outgoing
-    for idx=1:Nlevel
-        box = box_list(idx);
-        box_proxy_charges = proxy_charges{box};
-        outgoing_expansions{box} = Tprox2pw(box_proxy_charges, l);
-    end
-    % Collect incoming
-    for idx=1:Nlevel
-        box = box_list(idx);
-        clist = tree.boxColleagues{box};
-        incoming = zeros((2*nf+1)^3, 1);
-        for coll=clist
-            pw = outgoing_expansions{coll};
-            shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
-            incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
-        end
-        incoming_expansions{box} = incoming;
-        % Convert to local
-        local = Tpw2poly(incoming, l);
-        if isempty(local_expansions{box})
-            local_expansions{box} = local;
-        else
-            local_expansions{box} = local_expansions{box} + local;
-        end
-        % Shift to child
-        for k=1:2
-            for j=1:2
-                for i=1:2
-                    child = tree.boxChildren{box}(i,j,k);
-                    expa_child = Tp2c(i, j, k, local_expansions{box});
-                    local_expansions{child} = expa_child;
-                end
-            end
-        end
-    end
-end
+local_expansions = collect_local_expansions(tree, proxy_charges, ...
+                                            Tprox2pw, Tpw2poly, Tpwshift, Tp2c);
 toc
-
-
 
 uref = laplace_kernel(target, points, charges);
 
@@ -121,7 +78,7 @@ while box > 0
     sigma_l = sigma_0 / 2^l;
     sigma_lp1 = sigma_l / 2;
     clist = tree.boxColleagues{box};
-    incoming = zeros((2*nf+1)^3, 1);
+    %incoming = zeros(Nf^3, 1);
     for coll=clist
         if l==tree.maxLevel
             idxs = tree.box_point_idxs(coll);
@@ -175,8 +132,7 @@ scaled_target = (target-(tree.box_center(home_box)))*2*2^tree.maxLevel;
 Ex = approx.chebevalmat(scaled_target(1), p);
 Ey = approx.chebevalmat(scaled_target(2), p);
 Ez = approx.chebevalmat(scaled_target(3), p);
-udiff = real( kron(Ez, kron(Ey, Ex))* local_expansions{home_box} )
-udiff
+udiff = real( kron(Ez, kron(Ey, Ex))* local_expansions{home_box} );
 
 
 u = u+ufar+udiff+uself;
