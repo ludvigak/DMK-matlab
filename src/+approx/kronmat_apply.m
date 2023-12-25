@@ -5,7 +5,13 @@ function y = kronmat_apply(A, x, d)
     if d==2
         X = reshape(x, n, n);
         Y = A * X * A.';
+    elseif d==3
+        X = reshape(x, n, n , n);
+        K = pagemtimes(A, X);
+        K = pagemtimes(K, 'none', A, 'transpose');
+        Y = reshape(K, m^2, n) * A.';
     else
+        % Slow, but not used anymore
         X = reshape(x, n^(d-1), n);
         K = zeros(m^(d-1), n);
         for i=1:n
