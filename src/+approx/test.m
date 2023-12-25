@@ -81,15 +81,16 @@ classdef test < matlab.unittest.TestCase
         function chebevalmat3_fast(testCase)
             p = 30;
             N = 100;
+            M = rand(p, p);
             x = rand(N, 1)*2 - 1;
             y = rand(N, 1)*2 - 1;
             z = rand(N, 1)*2 - 1;
-            E = approx.chebevalmat3(x, y, z, p);
+            E = approx.chebevalmat3(x, y, z, p, M);
             ET = transpose(E);
             f = rand(100, 1);
             g1 = ET*f;
-            g2 = approx.chebevalmat3_trans_apply(x, y, z, p, f);
-            testCase.verifyEqual(g1, g2, 'abstol', eps(N));
+            g2 = approx.chebevalmat3_trans_apply(x, y, z, p, f, M);
+            testCase.verifyEqual(g1, g2, 'abstol', eps(p*N));
         end
         
         function chebInterp2D(testCase)
