@@ -1,5 +1,5 @@
 function local_expansions = collect_local_expansions(tree, proxy_charges, ...
-                                                     Tfar, Tprox2pw, Tpw2poly, Tpwshift, Tp2c ...
+                                                     Twin, Tprox2pw, Tpw2poly, Tpwshift, Tp2c ...
                                                     )
 % DMK downward pass
     outgoing_expansions = cell(1, tree.numBoxes);
@@ -29,8 +29,8 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
             % Convert to local
             local = Tpw2poly(incoming, l);
             if box==1
-                % At root level, also add far field potential to expansion
-                local = local + Tfar(proxy_charges{1});
+                % At root level, also add expansion of windowed kernel
+                local = local + Twin(proxy_charges{1});
             end
             if isempty(local_expansions{box})
                 local_expansions{box} = local;

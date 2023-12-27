@@ -19,7 +19,7 @@ function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0)
         wl = w{level+1}; % Fourier kernel scaling
         uhat = wl.*Psi;
         % Evaluate incoming at proxy points and convert to local expansion
-        Lambda = approx.kronmat_apply(ViMinc{level+1}, uhat, 3);
+        Lambda = real( approx.kronmat_apply(ViMinc{level+1}, uhat, 3) );
     end
     Tpw2poly = @apply;
 end

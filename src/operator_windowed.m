@@ -1,5 +1,5 @@
-function Tfar = operator_far(p, hf, nf, Ctrunc, sigma)
-% Operator that converts proxy_charges to local exapnsion of far field potential
+function Tfar = operator_windowed(p, hf, nf, Ctrunc, sigma)
+% Operator that converts proxy_charges to local expansion of windowed potential
     k = hf*(-nf:nf);
     [k1, k2, k3] = ndgrid(k);
     k1 = k1(:); k2 = k2(:); k3 = k3(:);

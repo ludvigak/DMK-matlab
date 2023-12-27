@@ -89,8 +89,14 @@ classdef test < matlab.unittest.TestCase
             ET = transpose(E);
             f = rand(100, 1);
             g1 = ET*f;
+            % Trans apply with weight
             g2 = approx.chebevalmat3_trans_apply(x, y, z, p, f, M);
             testCase.verifyEqual(g1, g2, 'abstol', eps(p*N));
+            expa = rand(p^3, 1);
+            % Straight apply without weight
+            E1 = approx.chebevalmat3(x, y, z, p);
+            fi = approx.chebevalmat3_apply(x, y, z, p, expa);
+            testCase.verifyEqual(fi, E1*expa, 'abstol', eps(p*N));
         end
         
         function chebInterp2D(testCase)
@@ -121,8 +127,12 @@ classdef test < matlab.unittest.TestCase
             fp = f(xp, yp, zp);
             Vi = inv(V);
             E = approx.chebevalmat3(x, y, z, p);
-            fi = E * approx.kronmat_apply(Vi, fp(:), 3);
+            expa = approx.kronmat_apply(Vi, fp(:), 3);
+            fi = E * expa;
             testCase.verifyEqual(fi, f(x, y, z), 'reltol', eps(1000));
+            % Fast apply
+            fi2 = approx.chebevalmat3_apply(x, y, z, p, expa);
+            testCase.verifyEqual(fi, fi2, 'abstol', eps(10));
         end
         
         function chebInterp3Dgrid2grid(testCase)

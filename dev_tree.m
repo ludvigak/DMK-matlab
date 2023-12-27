@@ -1,17 +1,19 @@
 clear all
 rng(1);
-N = 10000;
-max_level = 3;
+N = 3e4;
+max_level = 2;
 
 points = rand(N, 3)-1/2;
 charges = rand(N, 1)-1/2;
 
-targ_idx = 1;
-target = points(targ_idx,:)
-%charges(targ_idx) = 0;
 
-p = 40;
 tol = 1e-8;
+p = 43;
+
+%tol = 1e-3;
+%p = 16;
+
+
 sigma_0 = 1/sqrt(log(1/tol));
 
 % Setup root level windowed kernel
@@ -19,7 +21,7 @@ Kmax_win = ceil( 2*log(1/tol) );
 nf_win = Kmax_win;
 hf_win = Kmax_win/nf_win;
 Ctrunc = sqrt(3) + 6*sigma_0;    
-Tfar = operator_far(p, hf_win, nf_win, Ctrunc, sigma_0);
+Twin = operator_windowed(p, hf_win, nf_win, Ctrunc, sigma_0);
 % Setup planewave ops
 r0 = 1;
 D = 3*r0;
@@ -47,14 +49,14 @@ disp('================================')
 
 
 
-
-
 disp('* Build tree')
 tic
 tree = octree(points, max_level);
 toc
 tree
 
+tic_dmk = tic();
+tic_far = tic();
 disp('* Upward pass')
 tic
 proxy_charges = init_proxy_charges(tree, charges, p);
@@ -64,91 +66,41 @@ toc
 disp('* Downward pass')
 tic
 local_expansions = collect_local_expansions(tree, proxy_charges, ...
-                                            Tfar, Tprox2pw, Tpw2poly, Tpwshift, Tp2c);
+                                            Twin, Tprox2pw, Tpw2poly, Tpwshift, Tp2c);
 toc
 
-uref = laplace_kernel(target, points, charges);
+disp('* Eval local expansions')
+tic
+ufar = evaluate_local_expansions(local_expansions, tree, p);
+toc
+tfar = toc(tic_far);
 
+disp('* Local interactions')
+tic
+ures = local_interactions(tree, charges, sigma_0);
+toc
+tlocal = toc();
 
+uself = self_interaction(tree, charges, sigma_0);
+u = ufar + ures + uself;
+tdmk = toc(tic_dmk);
 
-u = 0;
-ufar = 0;
-udiff = 0;
-% Single target eval
-home_box = tree.pointBoxes(targ_idx)
-box = home_box;
-
-while box > 0
-    box
-    l = tree.boxLevels(box);
-    rl = 1/2^l;
-    sigma_l = sigma_0 / 2^l;
-    sigma_lp1 = sigma_l / 2;
-    clist = tree.boxColleagues{box};
-    %incoming = zeros(Nf^3, 1);
-    for coll=clist
-        if l==tree.maxLevel
-            idxs = tree.box_point_idxs(coll);
-            box_points = points(idxs, :);
-            box_charges = charges(idxs);
-            r = sqrt(sum((target-box_points).^2, 2));
-            Rl = erfc(r/sigma_l)./r;
-            Rl(r==0) = 0;
-            uR = sum(Rl .* box_charges);
-            u = u + uR;
-        else
-            if l==0
-                % W_0
-                box_proxy_points = tree.box_grid(coll, rvec);
-                box_proxy_charges = proxy_charges{coll};
-                r = sqrt(sum((target-box_proxy_points).^2, 2));
-                ufar = ufar + sum(erf(r/sigma_0)./r .* box_proxy_charges);
-            end
-            % % Add difference kernel
-            % %udiff = laplace_diffkernel(target, box_proxy_points, box_proxy_charges, sigma_l);
-
-            % % Compute box expansion
-            % pw = Tprox2pw(box_proxy_charges, l);
-            % % Shift it
-            % shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
-            % incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
-        end
-    end
-    %local_expa = Tpw2poly(incoming, l);
-    % if l < tree.maxLevel
-    %     local_expa = Tpw2poly(incoming_expansions{box}, l);
-    %     scaled_target = (target-(tree.box_center(box)))*2/rl;
-    %     Ex = approx.chebevalmat(scaled_target(1), p);
-    %     Ey = approx.chebevalmat(scaled_target(2), p);
-    %     Ez = approx.chebevalmat(scaled_target(3), p);
-    %     udiff_expa = real( kron(Ez, kron(Ey, Ex))* local_expa );
-    %     udiff = udiff+udiff_expa;
-    % end
-
-    
-    if l==tree.maxLevel
-        % Self interaction
-        uself = - charges(targ_idx)*2/(sqrt(pi)*sigma_l);
-    end
-    
-    % Next iteration: parent
-    box = tree.boxParents(box);
+if N <= 1e5
+    disp('* Direct eval')
+    tic
+    uref = laplace_kernel(points, points, charges);
+    toc
+    tdirect = toc();
+else
+    disp(' * No direct eval, problem too large')
+    uref = 0;
+    tdirect = 0;
 end
 
-scaled_target = (target-(tree.box_center(home_box)))*2*2^tree.maxLevel;
-Ex = approx.chebevalmat(scaled_target(1), p);
-Ey = approx.chebevalmat(scaled_target(2), p);
-Ez = approx.chebevalmat(scaled_target(3), p);
-udiff = real( kron(Ez, kron(Ey, Ex))* local_expansions{home_box} );
-
-
-u = u+udiff+uself;
-
-
-
-u
-uref
-err = abs(u - uref)
+disp(' ')
+fprintf("| Time DMK: %.2f (far) + %.2f (local) =\t%.2f\n", tfar, tlocal, tdmk)
+fprintf("| Time direct: \t\t\t\t%.2f\n", tdirect)
+err = norm(u - uref, inf)
 
 return
 

@@ -25,11 +25,11 @@ function test_windowed_kernel(testCase)
     nf = Kmax;
     hf = Kmax/nf;
     Ctrunc = sqrt(3) + 6*sigma_0;    
-    Tfar = operator_far(p, hf, nf, Ctrunc, sigma_0);
-    % Evaluate far-field at proxy points
-    far_expa = Tfar(box_proxy_charges);
+    Twin = operator_windowed(p, hf, nf, Ctrunc, sigma_0);
+    % Evaluate windowed kernel at proxy points
+    far_expa = Twin(box_proxy_charges);
     field_fourier = approx.kronmat_apply(V, far_expa, 3);
-    % Evaluate directly from source points
+    % Evaluate mollified potential directly from source points
     targets = box_proxy_points.';
     r = sqrt( (points(:, 1)-targets(1, :)).^2 + ...
               (points(:, 2)-targets(2, :)).^2 + ...
