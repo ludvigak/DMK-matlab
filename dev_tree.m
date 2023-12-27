@@ -14,6 +14,12 @@ p = 40;
 tol = 1e-8;
 sigma_0 = 1/sqrt(log(1/tol));
 
+% Setup root level windowed kernel
+Kmax_win = ceil( 2*log(1/tol) );
+nf_win = Kmax_win;
+hf_win = Kmax_win/nf_win;
+Ctrunc = sqrt(3) + 6*sigma_0;    
+Tfar = operator_far(p, hf_win, nf_win, Ctrunc, sigma_0);
 % Setup planewave ops
 r0 = 1;
 D = 3*r0;
@@ -25,6 +31,7 @@ Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
 Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
 Tpwshift = operator_planewave_shift(h0, nf);
 Tp2c = operator_parent2child(p);
+
 
 disp('=== Error estimates: ===')
 [rvec, V] = approx.chebvander(p);
@@ -57,7 +64,7 @@ toc
 disp('* Downward pass')
 tic
 local_expansions = collect_local_expansions(tree, proxy_charges, ...
-                                            Tprox2pw, Tpw2poly, Tpwshift, Tp2c);
+                                            Tfar, Tprox2pw, Tpw2poly, Tpwshift, Tp2c);
 toc
 
 uref = laplace_kernel(target, points, charges);
@@ -135,7 +142,7 @@ Ez = approx.chebevalmat(scaled_target(3), p);
 udiff = real( kron(Ez, kron(Ey, Ex))* local_expansions{home_box} );
 
 
-u = u+ufar+udiff+uself;
+u = u+udiff+uself;
 
 
 
