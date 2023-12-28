@@ -97,6 +97,9 @@ classdef test < matlab.unittest.TestCase
             E1 = approx.chebevalmat3(x, y, z, p);
             fi = approx.chebevalmat3_apply(x, y, z, p, expa);
             testCase.verifyEqual(fi, E1*expa, 'abstol', eps(p*N));
+            % Test that dimensions get right with scalar eval
+            fi1 = approx.chebevalmat3_apply(x(1), y(1), z(1), p, expa);
+            testCase.verifyEqual(fi1, fi(1), 'abstol', eps(10));
         end
         
         function chebInterp2D(testCase)

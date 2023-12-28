@@ -17,11 +17,10 @@ p = 43;
 sigma_0 = 1/sqrt(log(1/tol));
 
 % Setup root level windowed kernel
-Kmax_win = ceil( 2*log(1/tol) );
+Kmax_win = ceil( 2*log(1/tol));
 nf_win = Kmax_win;
 hf_win = Kmax_win/nf_win;
 Ctrunc = sqrt(3) + 6*sigma_0;    
-Twin = operator_windowed(p, hf_win, nf_win, Ctrunc, sigma_0);
 % Setup planewave ops
 r0 = 1;
 D = 3*r0;
@@ -29,6 +28,9 @@ h0 = 2*pi/D;
 K0 = 4/1 * log(1/tol);
 nf = ceil(K0/h0);
 Nf = 2*nf+1;
+
+
+Twin = operator_windowed(p, hf_win, nf_win, Ctrunc, sigma_0);
 Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
 Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
 Tpwshift = operator_planewave_shift(h0, nf);
@@ -45,9 +47,7 @@ Di = approx.chebevalmat(2*xeval, p)*(V\D0(rvec/2));
 fprintf("interp  = %.2e\n", norm(Di-D0(xeval), inf));
 fprintf("trunc_R = %.2e\n", erfc(1/sigma_0));
 fprintf("trunc_D = %.2e\n", (erf(1/(sigma_0/2))-erf(1/sigma_0)));
-disp('================================')
-
-
+disp('========================')
 
 disp('* Build tree')
 tic
@@ -100,7 +100,7 @@ end
 disp(' ')
 fprintf("| Time DMK: %.2f (far) + %.2f (local) =\t%.2f\n", tfar, tlocal, tdmk)
 fprintf("| Time direct: \t\t\t\t%.2f\n", tdirect)
-err = norm(u - uref, inf)
+err = norm(u - uref, inf) / norm(u, inf)
 
 return
 
@@ -141,7 +141,7 @@ end
 toc
 u
 uref
-err = abs(u - uref)
+relerr = abs(u - uref)
 
 return
 u = 0;

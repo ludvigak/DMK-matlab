@@ -3,7 +3,6 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
                                                     )
 % DMK downward pass
     outgoing_expansions = cell(1, tree.numBoxes);
-    incoming_expansions = cell(1, tree.numBoxes);
     local_expansions    = cell(1, tree.numBoxes);
     for l=0:tree.maxLevel-1
         rl = 1/2^l;
@@ -25,7 +24,6 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
                 shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
                 incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
             end
-            incoming_expansions{box} = incoming;
             % Convert to local
             local = Tpw2poly(incoming, l);
             if box==1
@@ -47,7 +45,13 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
                     end
                 end
             end
+            % Free eexpansion
+            local_expansions{box} = [];
         end
-    end
+        % Free outgoing expansions
+        for idx=1:Nlevel
+            outgoing_expansions{box} = [];
+        end        
+    end % end levels
 end
 
