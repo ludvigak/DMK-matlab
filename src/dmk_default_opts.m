@@ -1,0 +1,57 @@
+function dmk_opt = dmk_default_opts(tol, p, args)
+    arguments
+        tol    % tolerance
+        p = -1 % polynomial order, default is to adaptively decide
+        args.verbose (1,1) logical = false
+    end
+    % Setup mollification width
+    sigma_0 = 1/sqrt(log(1/tol));
+    if p==-1
+        % Estimate suitable p
+        p_list = 2:2:100;
+        interp_err = estimate_interp_error(p_list, sigma_0);
+        idx = find(interp_err < tol, 1);
+        p = p_list(idx);
+        p_err = interp_err(idx);
+        if isempty(idx)
+            error("Unable to find p satisfying tolerance")
+        end
+        cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
+    else
+        p_err = estimate_interp_error(p, sigma_0);
+    end
+    % Setup root level windowed kernel
+    Kmax_win = ceil( 2*log(1/tol));
+    nf_win = Kmax_win;
+    hf_win = Kmax_win/nf_win;
+    Ctrunc = sqrt(3) + 6*sigma_0;    
+    % Setup planewave ops
+    r0 = 1;
+    D = 3*r0;
+    h0 = 2*pi/D;
+    K0 = 4/1 * log(1/tol);
+    nf = ceil(K0/h0);
+    % Store in struct
+    dmk_opt = struct();
+    dmk_opt.p = p;
+    dmk_opt.tol = tol;
+    dmk_opt.sigma_0 = sigma_0;
+    dmk_opt.nf_win = nf_win;
+    dmk_opt.hf_win = hf_win;
+    dmk_opt.Ctrunc = Ctrunc;
+    dmk_opt.h0 = h0;
+    dmk_opt.nf = nf;
+    dmk_opt.verbose = args.verbose;
+    % Report
+    if dmk_opt.verbose
+        opt_fields = fields(dmk_opt);
+        for i=1:numel(opt_fields)
+            name = opt_fields{i};
+            disp(['[dmk_default_opts] ' name ' = ' num2str(dmk_opt.(name))])
+        end
+    end
+    % Print error estimates
+    cprintf(dmk_opt, "[dmk_default_opts] estimated interp. rel.err=%.2e\n", p_err);
+    trunc_err = laplace_diffkernel([1 0 0], [0 0 0], 1, sigma_0);
+    cprintf(dmk_opt, "[dmk_default_opts] estimated kern. trunc.err=%.2e\n", trunc_err);
+end
