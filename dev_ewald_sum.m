@@ -389,7 +389,7 @@ function stokes_plots()
     subplot(1, 2, 1)
     semilogy(kvec, fourier_beenakker, displayname="Stokes Fourier Beenakker")
     hold on
-    semilogy(kvec, fourier_hasimoto, '.-', displayname="Stokes Fourier Hasimoto")
+    semilogy(kvec, fourier_hasimoto, '-', displayname="Stokes Fourier Hasimoto")
     semilogy(kvec, fourier_pswf, '.-', displayname="Stokes Fourier PSWF")
     stem(kmax_pswf, fourier_pswf(find(kvec==kmax_pswf, 1)), displayname="PSWF bandwidth")
     axis([0 kvec(end) eps 1e5])
@@ -407,7 +407,7 @@ function stokes_plots()
     end
     semilogy(r, real_beenakker, displayname="Stokes Real Beenakker")
     hold on
-    semilogy(r, real_hasimoto, '.-', displayname="Stokes Real Hasimoto")
+    semilogy(r, real_hasimoto, '-', displayname="Stokes Real Hasimoto")
     semilogy(r, real_pswf, '.-', displayname="Stokes Real PSWF")
     stem(rl, real_pswf(find(r==rl, 1)), displayname="PSWF cutoff")
     axis([0 L eps inf])
