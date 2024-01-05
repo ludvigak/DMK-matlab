@@ -10,6 +10,8 @@ function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kern
         Minc = exp(1i*rvec.*k'/2*rl);
         ViMinc{l+1} = V\Minc;
         [k1, k2, k3] = ndgrid(k, k, k);
+        % Todo: Dlhat needs to be a closure that is applied to Psi at runtime,
+        % to account for vectors
         Dlhat = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
         % w_l factor 
         w{l+1} = 1/(2*pi)^3 * hl^3 * Dlhat;
