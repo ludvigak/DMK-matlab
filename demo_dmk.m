@@ -9,7 +9,7 @@ charges = rand(N, 1)-1/2;
 
 disp("* DMK")
 atic = tic();
-dmk_opt   = dmk_default_opts(tol, verbose=true);
+dmk_opt   = dmk_default_opts(tolerance=tol, verbose=true);
 dmk_state = dmk_init(points, max_level, dmk_opt);
 u_dmk     = dmk_apply(charges, dmk_state);
 toc(atic)

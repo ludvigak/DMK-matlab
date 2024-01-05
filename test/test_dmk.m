@@ -12,7 +12,7 @@ function test_point2point(testCase)
     max_level = 1;
     points = rand(N, 3)-1/2;
     charges = rand(N, 1)-1/2;
-    dmk_opt   = dmk_default_opts(tol);
+    dmk_opt   = dmk_default_opts(tolerance=tol);
     dmk_state = dmk_init(points, max_level, dmk_opt);
     u_dmk     = dmk_apply(charges, dmk_state);
     u_ref = laplace_kernel(points, points, charges);

@@ -1,9 +1,11 @@
-function dmk_opt = dmk_default_opts(tol, p, args)
+function dmk_opt = dmk_default_opts(args)
     arguments
-        tol    % tolerance
-        p = -1 % polynomial order, default is to adaptively decide
+        args.tolerance    % tolerance
+        args.p = -1 % polynomial order, default (-1) is to adaptively decide
         args.verbose (1,1) logical = false
     end
+    p = args.p;
+    tol = args.tolerance;
     % Setup mollification width
     sigma_0 = 1/sqrt(log(1/tol));
     if p==-1
