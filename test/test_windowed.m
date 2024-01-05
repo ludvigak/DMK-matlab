@@ -25,7 +25,7 @@ function test_windowed_kernel(testCase)
     nf = Kmax;
     hf = Kmax/nf;
     Ctrunc = sqrt(3) + 6*sigma_0;    
-    Twin = operator_windowed(p, hf, nf, Ctrunc, sigma_0);
+    Twin = operator_windowed(p, hf, nf, Ctrunc, sigma_0, kernels.laplace_ewald);
     % Evaluate windowed kernel at proxy points
     far_expa = Twin(box_proxy_charges);
     field_fourier = approx.kronmat_apply(V, far_expa, 3);

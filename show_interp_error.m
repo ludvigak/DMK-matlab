@@ -1,6 +1,8 @@
 % Show kernel interpolation error for varying tolerances and p
 clear
 
+kernel = kernels.laplace_ewald();
+
 figure(1)
 clf
 rng(1);
@@ -16,7 +18,7 @@ err_first = [];
 tol_achieved = [];
 for tol = tol_list
     sigma0 = 1/sqrt(log(1/tol));
-    interp_err = estimate_interp_error(plist, sigma0);
+    interp_err = estimate_interp_error(plist, sigma0, kernel);
     first = find(interp_err < tol, 1);
     if ~isempty(first)
         p_first(end+1) = plist(first);

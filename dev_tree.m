@@ -13,7 +13,7 @@ p = 43;
 %tol = 1e-3;
 %p = 16;
 
-
+kernel = kernels.laplace_ewald();
 sigma_0 = 1/sqrt(log(1/tol));
 
 % Setup root level windowed kernel
@@ -30,9 +30,9 @@ nf = ceil(K0/h0);
 Nf = 2*nf+1;
 
 
-Twin = operator_windowed(p, hf_win, nf_win, Ctrunc, sigma_0);
+Twin = operator_windowed(p, hf_win, nf_win, Ctrunc, sigma_0, kernel);
 Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
+Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel);
 Tpwshift = operator_planewave_shift(h0, nf);
 Tp2c = operator_parent2child(p);
 
@@ -77,18 +77,18 @@ tfar = toc(tic_far);
 
 disp('* Local interactions')
 tic
-ures = local_interactions(tree, charges, sigma_0);
+ures = local_interactions(tree, charges, sigma_0, kernel);
 toc
 tlocal = toc();
 
-uself = self_interaction(tree, charges, sigma_0);
+uself = self_interaction(tree, charges, sigma_0, kernel);
 u = ufar + ures + uself;
 tdmk = toc(tic_dmk);
 
 if N <= 1e5
     disp('* Direct eval')
     tic
-    uref = laplace_kernel(points, points, charges);
+    uref = kernel.direct(points, points, charges);
     toc
     tdirect = toc();
 else
@@ -197,8 +197,8 @@ for box_idx=1:tree.numBoxes
     box_proxy_points = tree.box_grid(box_idx, rvec);
     box_proxy_charges = proxy_charges{box_idx};
     target = c + 3*s;
-    u = laplace_kernel(target, box_points, box_charges);
-    u_proxy = laplace_kernel(target, box_proxy_points, box_proxy_charges);
+    u = kernel.direct(target, box_points, box_charges);
+    u_proxy = kernel.direct(target, box_proxy_points, box_proxy_charges);
     err_proxy(box_idx) = abs(u-u_proxy);
 end
 err_proxy

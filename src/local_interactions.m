@@ -1,4 +1,4 @@
-function u=local_interactions(tree, charges, sigma_0)
+function u=local_interactions(tree, charges, sigma_0, kernel)
     u = zeros(tree.N, 1);
     leaf_list = tree.nonempty_leafs();
     Nleafs = numel(leaf_list);
@@ -24,7 +24,7 @@ function u=local_interactions(tree, charges, sigma_0)
             coll_idxs = tree.box_point_idxs(coll);
             coll_points = tree.points(coll_idxs, :);
             coll_charges = charges(coll_idxs);
-            ubox = ubox + laplace_reskernel(box_points, coll_points, coll_charges, sigma_l);
+            ubox = ubox + kernel.reskernel(box_points, coll_points, coll_charges, sigma_l);
         end
         % Store output data from this iteration
         udata{i} = ubox;

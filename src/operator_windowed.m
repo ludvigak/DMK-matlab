@@ -1,4 +1,4 @@
-function Tfar = operator_windowed(p, hf, nf, Ctrunc, sigma)
+function Tfar = operator_windowed(p, hf, nf, Ctrunc, sigma, kernel)
 % Operator that converts proxy_charges to local expansion of windowed potential
     k = hf*(-nf:nf);
     [k1, k2, k3] = ndgrid(k);
@@ -6,7 +6,7 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, sigma)
     [rvec, V] = approx.chebvander(p);
     kdotr = exp(-1i*k(:).*rvec'/2);
     M = V\(kdotr');
-    W0hat = laplace_winkernel_fourier(k1, k2, k3, sigma, Ctrunc);
+    W0hat = kernel.winkernel_fourier(k1, k2, k3, sigma, Ctrunc);
     w = W0hat  * hf^3 / (2*pi)^3;
     function ufar_expa = apply(proxy_charges)
         ghat = approx.kronmat_apply(kdotr, proxy_charges, 3);

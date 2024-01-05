@@ -10,6 +10,7 @@ function test_planeswaves(testCase)
     tol = 1e-9;
     p = 45;
     max_level = 3;
+    kernel = kernels.laplace_ewald;
     sigma_0 = 1/sqrt(log(1/tol));
     r0 = 1;
     D = 3*r0;
@@ -17,7 +18,7 @@ function test_planeswaves(testCase)
     K0 = 4/1 * log(1/tol);
     nf = ceil(K0/h0);
     Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0);
+    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel);
     Tpwshift = operator_planewave_shift(h0, nf);
     for l = 0:max_level
         rl = 1/2^l;
@@ -36,7 +37,7 @@ function test_planeswaves(testCase)
         k1 = hl*m1(:);
         k2 = hl*m2(:);
         k3 = hl*m3(:);    
-        D0hat = laplace_diffkernel_fourier(k1, k2, k3, sigma_l);
+        D0hat = kernel.diffkernel_fourier(k1, k2, k3, sigma_l);
         % w_l factor 
         wl = 1/(2*pi)^3 * hl^3 * D0hat;
         % Source expansion
@@ -46,7 +47,7 @@ function test_planeswaves(testCase)
         % Compute udiff
         udiff_fourier = real( (wl .* ghat).' * exp(1i*kdotx) );
         % Compare to direct reference
-        udiff_direct = laplace_diffkernel(target, points, charges, sigma_l);
+        udiff_direct = kernel.diffkernel(target, points, charges, sigma_l);
         % Compare direct and Fourier
         testCase.verifyEqual(udiff_fourier, udiff_direct, 'abstol', tol);
         % Form proxy charges:
@@ -74,7 +75,7 @@ function test_planeswaves(testCase)
                     Psi_shifted = Tpwshift(Psi, i, j, k);
                     lambda_shifted = Tpw2poly(Psi_shifted, l);
                     udiff_shifted = real( kron(Ez, kron(Ey, Ex))* lambda_shifted );
-                    udiff_shifted_direct = laplace_diffkernel(target - newCenter, points, charges, sigma_l);
+                    udiff_shifted_direct = kernel.diffkernel(target - newCenter, points, charges, sigma_l);
                     testCase.verifyEqual(udiff_shifted, ...
                                          udiff_shifted_direct, ...
                                          'abstol', tol);

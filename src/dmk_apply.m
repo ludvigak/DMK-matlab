@@ -27,11 +27,11 @@ function u = dmk_apply(charges, dmk_state)
     cprintf(opt, '[dmk_apply] eval expansions:    %.3f\n', t_eval);
     % Near interactions
     tic_local = tic();
-    ures = local_interactions(tree, charges, sigma_0);
+    ures = local_interactions(tree, charges, sigma_0, dmk_state.opt.kernel);
     t_local = toc(tic_local);
     cprintf(opt, '[dmk_apply] local interactions: %.3f\n', t_local);
     % Self interactions
-    uself = self_interaction(tree, charges, sigma_0);
+    uself = self_interaction(tree, charges, sigma_0, dmk_state.opt.kernel);
     % Sum up
     u = ufar + ures + uself;
     cprintf(opt, '[dmk_apply]               SUM = %.3f\n', t_down+t_up+t_eval+t_local);        

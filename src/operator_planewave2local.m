@@ -1,4 +1,4 @@
-function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0)
+function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel)
     ViMinc = cell(1, max_level+1);
     w      = cell(1, max_level+1);
     [rvec, V] = approx.chebvander(p);
@@ -10,7 +10,7 @@ function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0)
         Minc = exp(1i*rvec.*k'/2*rl);
         ViMinc{l+1} = V\Minc;
         [k1, k2, k3] = ndgrid(k, k, k);
-        Dlhat = laplace_diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
+        Dlhat = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
         % w_l factor 
         w{l+1} = 1/(2*pi)^3 * hl^3 * Dlhat;
     end

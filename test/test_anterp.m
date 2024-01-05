@@ -13,6 +13,7 @@ function test_upward_pass(testCase)
     rvec = chebpts(p, 1);
     tree = octree(points, max_level);
     proxy_charges = init_proxy_charges(tree, charges, p);
+    kernel = kernels.laplace_ewald();
     % For each box, check that proxy charges represent the field from
     % all points in box (including children), at a well-separated distance
     for box_idx=1:tree.numBoxes
@@ -24,8 +25,8 @@ function test_upward_pass(testCase)
         box_proxy_points = tree.box_grid(box_idx, rvec);
         box_proxy_charges = proxy_charges{box_idx};
         target = c + s; % half-box separation from center
-        u = laplace_kernel(target, box_points, box_charges);
-        u_proxy = laplace_kernel(target, box_proxy_points, box_proxy_charges);
+        u = kernel.direct(target, box_points, box_charges);
+        u_proxy = kernel.direct(target, box_proxy_points, box_proxy_charges);
         testCase.verifyEqual(u, u_proxy, 'reltol', eps(1000));
     end
 end

@@ -15,7 +15,7 @@ function test_point2point(testCase)
     dmk_opt   = dmk_default_opts(tolerance=tol);
     dmk_state = dmk_init(points, max_level, dmk_opt);
     u_dmk     = dmk_apply(charges, dmk_state);
-    u_ref = laplace_kernel(points, points, charges);
+    u_ref = dmk_opt.kernel.direct(points, points, charges);
     max_rel_err = norm(u_ref - u_dmk, inf) / norm(u_ref, inf);
     testCase.verifyLessThan(max_rel_err, tol);
 end

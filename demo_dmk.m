@@ -17,7 +17,7 @@ toc(atic)
 if N <= 1e5
     disp('* Direct eval')
     atic = tic();
-    u_ref = laplace_kernel(points, points, charges);
+    u_ref = dmk_opt.kernel.direct(points, points, charges);
     toc(atic)
     max_rel_err = norm(u_ref - u_dmk, inf) / norm(u_ref, inf)
 end
