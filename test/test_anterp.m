@@ -4,22 +4,21 @@ tests = functiontests(localfunctions);
 end
 
 %% Test Functions
-function test_upward_pass(testCase)
+function run_upward_pass(testCase, kernel)
     N = 64;
     p = 32;
     max_level = 1;
     points = rand(N, 3)-1/2;
-    charges = rand(N, 1)-1/2;
+    charges = rand(N, kernel.dim_in)-1/2;
     rvec = chebpts(p, 1);
     tree = octree(points, max_level);
     proxy_charges = init_proxy_charges(tree, charges, p);
-    kernel = kernels.laplace_ewald();
     % For each box, check that proxy charges represent the field from
     % all points in box (including children), at a well-separated distance
     for box_idx=1:tree.numBoxes
         idxs = tree.box_point_idxs(box_idx);
         box_points = points(idxs, :);
-        box_charges = charges(idxs);
+        box_charges = charges(idxs, :);
         c = tree.box_center(box_idx);
         s = tree.box_size(box_idx);
         box_proxy_points = tree.box_grid(box_idx, rvec);
@@ -31,3 +30,10 @@ function test_upward_pass(testCase)
     end
 end
 
+function test_upward_pass_laplace(testCase)
+    run_upward_pass(testCase, kernels.laplace_ewald());
+end
+
+function test_upward_pass_stokeslet(testCase)
+    run_upward_pass(testCase, kernels.stokeslet_hasimoto());
+end
