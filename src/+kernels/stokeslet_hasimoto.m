@@ -47,6 +47,10 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
                 u(range, :) = (udiag + uoffd).';
             end
         end
+
+        function uself = self_interaction(charges, sigma_l)
+            uself = -4/(sigma_l*sqrt(pi)) * charges;
+        end
     end
 
     methods
@@ -142,10 +146,6 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
                 uhat(ksq==0, :) = fhat(ksq==0, :) * 2/Ctrunc * (2*pi)^3 / hf^3;
             end
             W0hat_fun = @apply;
-        end
-
-        function uself = self_interaction(self, charges, sigma_l)
-            uself = -4/(sigma_l*sqrt(pi)) * charges;
         end
     end
 end
