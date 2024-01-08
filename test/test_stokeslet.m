@@ -69,3 +69,30 @@ function test_moll(testCase)
     u = kernel.direct(targets, sources, forces);
     testCase.verifyEqual(u, umoll+ures, reltol=1e-15)
 end
+
+function test_diff(testCase)
+% Simple check that diffkernel is defined correctly in relation to mollkernel
+    kernel = kernels.stokeslet_hasimoto();
+    Nsrc = 15;
+    Ntrg = 5;
+    rng(1);
+    sources = rand(Nsrc, 3);
+    forces  = rand(Nsrc, 3);
+    targets = rand(Ntrg, 3);
+    tol = 1e-8;
+    sigma_0 = 1/sqrt(log(1/tol));
+    sigma_1 = sigma_0 / 2;
+    umoll0 = kernel.mollkernel(targets, sources, forces, sigma_0);
+    umoll1 = kernel.mollkernel(targets, sources, forces, sigma_1);
+    udiff0 = kernel.diffkernel(targets, sources, forces, sigma_0);
+    testCase.verifyEqual(udiff0, umoll1-umoll0, reltol=1e-15)
+    % Fourier modes
+    [k1, k2, k3] = ndgrid(-5:5);
+    k1 = k1(:); k2 = k2(:); k3 = k3(:);
+    Nf = numel(k1);
+    Fmoll0 = kernel.mollkernel_fourier(k1, k2, k3, sigma_0);
+    Fmoll1 = kernel.mollkernel_fourier(k1, k2, k3, sigma_1);
+    Fdiff0 = kernel.diffkernel_fourier(k1, k2, k3, sigma_0);
+    fhat = rand(Nf, 3) + 1i*rand(Nf, 3);
+    testCase.verifyEqual(Fdiff0(fhat), (Fmoll1(fhat)-Fmoll0(fhat)), abstol=1e-14);
+end

@@ -15,7 +15,7 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
 
         function B = fourier_scaling(ksq, xi)
             B = 8*pi./ksq.^2 .* (1 + ksq/(4*xi^2)) .*  exp(-ksq/4/xi^2);
-            B(ksq==0) = 0;
+            B(ksq==0) = 0; % Not actually zero, just avoiding inf
         end
         
         function u = direct(targets, sources, f)
@@ -72,21 +72,47 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             umoll = u - ures;
         end
 
+        function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, sigma_l)
+            ksq = k1.^2 + k2.^2 + k3.^2;
+            xi = 1/sigma_l;
+            B = self.fourier_scaling(ksq, xi);
+            Nf = numel(k1);
+            function uhat=apply(fhat)
+                assert(all(size(fhat)==[Nf 3]));
+                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
+                uhat = B .* (ksq.*fhat - [k1 k2 k3].*kdotf);
+                % Note k==0 artificially set to zero
+            end
+            Mlhat_fun = @apply;
+        end
+        
         function udiff = diffkernel(self, targets, sources, f, sigma_l)
-        % Laplace difference kernel D_l(r) = M_{l+1}(r) - M_l(r)
+        % Difference kernel D_l(r) = M_{l+1}(r) - M_l(r)
             sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2
             udiff = mollkernel(self, targets, sources, f, sigma_lp1) - ...
                     mollkernel(self, targets, sources, f, sigma_l);
         end
         
-        function Dlhat = diffkernel_fourier(self, k1, k2, k3, sigma_l)
-        % Fourier transform of Laplace difference kernel
-            % sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2
-            % ksq = k1.^2 + k2.^2 + k3.^2;
-            % Dlhat = 4*pi*(exp(-ksq*sigma_lp1^2/4) - exp(-ksq*sigma_l^2/4))./ksq;
-            % Dlhat(ksq==0) = pi*(sigma_l^2-sigma_lp1^2);
+        function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, sigma_l)
+        % Fourier transform of difference kernel
+            ksq = k1.^2 + k2.^2 + k3.^2;
+            sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2;
+            xi_l = 1/sigma_l;
+            xi_lp1 = 1/sigma_lp1;
+            Bl = self.fourier_scaling(ksq, xi_l);
+            Blp1 = self.fourier_scaling(ksq, xi_lp1);
+            Bdiff = Blp1 - Bl;
+            % Difference kernel is zero at k=0, so artificial zeroing of scaling is ok
+            function uhat=apply(fhat)
+                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
+                uhat = zeros(size(fhat), like=1+1i);
+                uhat(:, 1) = Bdiff .* (ksq.*fhat(:, 1) - k1.*kdotf);
+                uhat(:, 2) = Bdiff .* (ksq.*fhat(:, 2) - k2.*kdotf);
+                uhat(:, 3) = Bdiff .* (ksq.*fhat(:, 3) - k3.*kdotf);
+            end
+            Dlhat_fun = @apply;
         end
-
+        
         function W0hat = winkernel_fourier(self, k1, k2, k3, sigma_0, Ctrunc)
         % Fourier transform of  windowed mollified Laplace kernel (i.e. far field)
             % ksq = k1.^2 + k2.^2 + k3.^2;

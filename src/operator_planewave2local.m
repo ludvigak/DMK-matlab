@@ -1,5 +1,6 @@
 function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel)
     ViMinc = cell(1, max_level+1);
+    Dlhat  = cell(1, max_level+1);
     w      = cell(1, max_level+1);
     [rvec, V] = approx.chebvander(p);
     for l=0:max_level
@@ -10,18 +11,23 @@ function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kern
         Minc = exp(1i*rvec.*k'/2*rl);
         ViMinc{l+1} = V\Minc;
         [k1, k2, k3] = ndgrid(k, k, k);
-        % Todo: Dlhat needs to be a closure that is applied to Psi at runtime,
+        % Dlhat is a closure that is applied to Psi at runtime,
         % to account for vectors
-        Dlhat = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
+        Dlhat{l+1} = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
         % w_l factor 
-        w{l+1} = 1/(2*pi)^3 * hl^3 * Dlhat;
+        w{l+1} = 1/(2*pi)^3 * hl^3;
     end
+    dim = kernel.dim_in;
     function Lambda = apply(Psi, level)
     % Convert incoming expansion Psi to local expansion Lambda
         wl = w{level+1}; % Fourier kernel scaling
-        uhat = wl.*Psi;
+        op = Dlhat{level+1};
+        uhat = wl.*op(Psi);
         % Evaluate incoming at proxy points and convert to local expansion
-        Lambda = real( approx.kronmat_apply(ViMinc{level+1}, uhat, 3) );
+        Lambda = zeros(p^3, dim);
+        for d=1:dim
+            Lambda(:, d) = real( approx.kronmat_apply(ViMinc{level+1}, uhat(:, d), 3) );
+        end
     end
     Tpw2poly = @apply;
 end
