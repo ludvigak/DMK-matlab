@@ -7,11 +7,20 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, sigma, kernel)
     kdotr = exp(-1i*k(:).*rvec'/2);
     M = V\(kdotr');
     W0hat = kernel.winkernel_fourier(k1, k2, k3, sigma, Ctrunc);
-    w = W0hat  * hf^3 / (2*pi)^3;
+    w = hf^3 / (2*pi)^3;
+    Nf = numel(k1);
+    dim_in  = kernel.dim_in;
+    dim_out = kernel.dim_out;
     function ufar_expa = apply(proxy_charges)
-        ghat = approx.kronmat_apply(kdotr, proxy_charges, 3);
-        uhat = w.*ghat;
-        ufar_expa = real( approx.kronmat_apply(M, uhat, 3) );
+        ghat = zeros(Nf, dim_in, like=1+1i);
+        for d=1:dim_in
+            ghat(:, d) = approx.kronmat_apply(kdotr, proxy_charges(:, d), 3);
+        end
+        uhat = w.*W0hat(ghat);
+        ufar_expa = zeros(p^3, dim_out);
+        for d=1:dim_out
+            ufar_expa(:,d) = real( approx.kronmat_apply(M, uhat(:, d), 3) );
+        end
     end
     Tfar = @apply;
 end

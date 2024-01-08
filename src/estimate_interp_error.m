@@ -5,7 +5,7 @@ function est = estimate_interp_error(p_list, sigma_0, kernel)
     Neval =  25;
     rs = RandStream('mt19937ar', seed=1);
     xsrc = rs.rand(Nsrc, 1) - 1/2;
-    charges = rs.rand(Nsrc, 1) - 1/2;
+    charges = rs.rand(Nsrc, kernel.dim_in) - 1/2;
     sources = [xsrc zeros(Nsrc, 2)];   
     xeval = linspace(-1/2, 1/2, Neval)';
     K = @(x) kernel.diffkernel([x(:) 0*x(:), 0*x(:)], sources, charges, sigma_0);

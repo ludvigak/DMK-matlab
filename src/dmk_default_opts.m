@@ -64,6 +64,8 @@ function dmk_opt = dmk_default_opts(args)
     end
     % Print error estimates
     cprintf(dmk_opt, "[dmk_default_opts] estimated interp. rel.err=%.2e\n", p_err);
-    trunc_err = kernel.diffkernel([1 0 0], [0 0 0], 1, sigma_0);
+    trunc_err = norm(...
+        kernel.diffkernel([1 0 0], [0 0 0], ones(1, kernel.dim_in), sigma_0), ...
+        inf);
     cprintf(dmk_opt, "[dmk_default_opts] estimated kern. trunc.err=%.2e\n", trunc_err);
 end

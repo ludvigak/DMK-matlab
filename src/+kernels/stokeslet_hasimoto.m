@@ -37,8 +37,12 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
                 r3 = targets(3, range)-sources(:, 3);
                 
                 r = sqrt(r1.^2 + r2.^2 + r3.^2);
-                udiag = f' * (1./r);
+                self_mask = (r==0);
+                rinv = 1./r;
+                rinv(self_mask) = 0;
+                udiag = f' * rinv;
                 fdotrd3 = (f(:, 1).*r1 + f(:, 2).*r2  + f(:, 3).*r3)./r.^3;
+                fdotrd3(self_mask) = 0;
                 uoffd = [sum(r1.*fdotrd3, 1); sum(r2.*fdotrd3, 1); sum(r3.*fdotrd3, 1)];
                 u(range, :) = (udiag + uoffd).';
             end
@@ -59,8 +63,12 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             r = sqrt(r1.^2 + r2.^2 + r3.^2);
             xi = 1/sigma_l;
             [Sdiag, Soffd] = self.real_decay(r, xi);
-            udiag = f' * (Sdiag./r);
+            Sdrinv = Sdiag./r;
+            self_mask = (r==0);
+            Sdrinv(self_mask) = 0;
+            udiag = f' * Sdrinv;
             fdotrd3 = (f(:, 1).*r1 + f(:, 2).*r2  + f(:, 3).*r3).*Soffd./r.^3;
+            fdotrd3(self_mask) = 0;
             uoffd = [sum(r1.*fdotrd3, 1); sum(r2.*fdotrd3, 1); sum(r3.*fdotrd3, 1)];
             ures = (udiag + uoffd).';
         end
@@ -113,16 +121,31 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             Dlhat_fun = @apply;
         end
         
-        function W0hat = winkernel_fourier(self, k1, k2, k3, sigma_0, Ctrunc)
-        % Fourier transform of  windowed mollified Laplace kernel (i.e. far field)
-            % ksq = k1.^2 + k2.^2 + k3.^2;
-            % k = sqrt(ksq);
-            % W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* exp(-ksq * sigma_0^2/4);
-            % W0hat(ksq==0) = 8*pi * Ctrunc^2/4;
+        function W0hat_fun = winkernel_fourier(self, k1, k2, k3, sigma_0, Ctrunc)
+        % Fourier transform of windowed mollified kernel (i.e. far field)
+            ksq = k1.^2 + k2.^2 + k3.^2;
+            hf = k1(2)-k1(1); % Should be safe way to get hf
+            k = sqrt(ksq);
+            xi = 1/sigma_0;
+            B = self.fourier_scaling(ksq, xi);
+            Bwin = B .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
+            Bwin(k==0) = 0; % FIX?
+            function uhat=apply(fhat)
+                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
+                uhat = zeros(size(fhat), like=1+1i);
+                uhat(:, 1) = Bwin .* (ksq.*fhat(:, 1) - k1.*kdotf);
+                uhat(:, 2) = Bwin .* (ksq.*fhat(:, 2) - k2.*kdotf);
+                uhat(:, 3) = Bwin .* (ksq.*fhat(:, 3) - k3.*kdotf);
+                % Adjust k=0 scaling for windowed B
+                % Correcting for weighting in operator here, need to
+                % derive what is going on
+                uhat(ksq==0, :) = fhat(ksq==0, :) * 2/Ctrunc * (2*pi)^3 / hf^3;
+            end
+            W0hat_fun = @apply;
         end
 
         function uself = self_interaction(self, charges, sigma_l)
-        % uself = -charges*2/(sqrt(pi)*sigma_l);
+            uself = -4/(sigma_l*sqrt(pi)) * charges;
         end
     end
 end

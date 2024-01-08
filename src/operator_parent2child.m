@@ -13,7 +13,11 @@ function Tp2c = operator_parent2child(p)
         Ux = U{i};
         Uy = U{j};
         Uz = U{k};
-        child_expansion = approx.kronmat3_apply(Uz, Uy, Ux, parent_expansion);
+        dim = size(parent_expansion, 2);
+        child_expansion = zeros(p^3, dim);
+        for d=1:dim
+            child_expansion(:,d) = approx.kronmat3_apply(Uz, Uy, Ux, parent_expansion(:,d));
+        end
     end
     Tp2c = @apply;
 end
