@@ -12,7 +12,9 @@ global c_pswf % WARNING: GLOBAL VARIABLE
 N =  50;
 L = 2*pi;
 points = L*rand(N, 3);
-target = [L L L/2]/2;
+
+target = points(1, :); % With self-interaction
+%target = [L L L/2]/2; % Without self-interaction
 
 %% Laplace
 disp('* Laplace Classical')
@@ -24,7 +26,7 @@ xilist = linspace(0.9, 1.5, 10);
 ulist = zeros(size(xilist));
 for idx=1:numel(xilist)
     xi = xilist(idx);
-    u = ewald_sum(target, points, charges, @laplace_real, @laplace_fourier, L, xi);
+    u = ewald_sum(target, points, charges, @laplace_real, @laplace_fourier, @laplace_self, L, xi);
     ulist(idx) = u;
 end
 udiff = ulist - ulist(end);
@@ -37,7 +39,7 @@ c_pswf = 30; % This seems to give us all the accuracy we can get
 rl = L;
 xi_pswf = 1/rl * c_pswf/2; % Somewhat proportional. This is used throughout
 % Check that we get the same value as using regular Ewald
-u_pswf = ewald_sum(target, points, charges, @laplace_real_pswf, @laplace_fourier_pswf, L, xi_pswf);
+u_pswf = ewald_sum(target, points, charges, @laplace_real_pswf, @laplace_fourier_pswf, @laplace_self_pswf, L, xi_pswf);
 err_laplace_pswf = abs(u_pswf - u_ewald)
 assert(err_laplace_pswf < 1e-12); 
 
@@ -56,7 +58,7 @@ ulist = zeros(numel(xilist), 3);
 for idx=1:numel(xilist)
     xi = xilist(idx);
     u = ewald_sum(target, points, strengths, ...
-                  @stokes_real_hasimoto, @stokes_fourier_hasimoto, L, xi);
+                  @stokes_real_hasimoto, @stokes_fourier_hasimoto, @stokes_self_hasimoto, L, xi);
     ulist(idx, :) = u;
 end
 u_hasimoto = ulist(end, :);
@@ -67,7 +69,8 @@ assert(stokes_udiff_xi < 1e-13)
 disp('* Stokes: Beenakker')
 % Compare Hasimoto and Beenakker values
 u_beenakker = ewald_sum(target, points, strengths, ...
-                       @stokes_real_beenakker, @stokes_fourier_beenakker, L, xi);
+                        @stokes_real_beenakker, @stokes_fourier_beenakker, @stokes_self_beenakker, ...
+                        L, xi);
 
 err_beenakker = norm(u_beenakker - u_hasimoto)
 assert(err_beenakker < 1e-13)
@@ -79,6 +82,7 @@ disp('* Stokes: exp_erf')
 u_experf = ewald_sum(target, points, strengths, ...
                      stokes_real_window(@exp_erfc), ...
                      stokes_fourier_window(@exp_hat), ...
+                     stokes_self_window(@exp_erfc), ...
                      L, xi);
 err_experf = norm(u_beenakker - u_experf)
 assert(err_experf < 1e-13)
@@ -89,8 +93,9 @@ c_pswf = 40; % We need a bigger c
 rl = L;
 xi_pswf = 1/rl * c_pswf/2;
 u_pswf = ewald_sum(target, points, strengths, ...
-                     stokes_real_window(@pswf_erfc), ...
-                     stokes_fourier_window(@pswf_hat), ...
+                   stokes_real_window(@pswf_erfc), ...
+                   stokes_fourier_window(@pswf_hat), ...
+                   stokes_self_window(@pswf_erfc), ...
                    L, xi_pswf);
 % Compare to previous results
 err_pswf = norm(u_hasimoto - u_pswf)
@@ -103,13 +108,14 @@ end
 %% Functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Kernel-independent Ewald calculation
-function u = ewald_sum(target, points, charges, r_kernel, f_kernel, L, xi)
+function u = ewald_sum(target, points, charges, r_kernel, f_kernel, self_kernel, L, xi)
     % === Real space
     real_check = norm(r_kernel([0 0 0], [L 0 0], charges(1,:).^0, xi));
     assert(real_check < 1e-13) % Sanity check of kernel decay
     uR = 0;
     uF = 0;
     N = size(points, 1);
+    fself = [];
     % Collect 3^3 nearest neighbor boxes
     for p1=-1:1
         for p2 = -1:1
@@ -117,7 +123,12 @@ function u = ewald_sum(target, points, charges, r_kernel, f_kernel, L, xi)
                 shift = L*[p1 p2 p3];
                 for i=1:N
                     src = points(i, :)+shift;
-                    uR = uR + r_kernel(target, src, charges(i,:), xi);
+                    f = charges(i,:);
+                    if norm(src-target)==0
+                        fself = f; % We have self interaction;
+                        continue
+                    end
+                    uR = uR + r_kernel(target, src, f, xi);
                 end
             end
         end
@@ -138,7 +149,10 @@ function u = ewald_sum(target, points, charges, r_kernel, f_kernel, L, xi)
         uhat = exp(-1i*kr) .* GF;
         uF = uF + 1/L^3 * sum(real(uhat), 1);
     end
-    u = uR + uF;
+    if ~isempty(fself)
+        uS = self_kernel(fself, xi);
+    end
+    u = uR + uF + uS;
 end
 
 %% Laplace kernel
@@ -155,6 +169,10 @@ function uF = laplace_fourier(k1, k2, k3, xi, charge)
     uF(ksq==0) = 0;
 end
 
+function uS = laplace_self(fself, xi)
+    uS = -fself*2*xi/sqrt(pi);
+end
+
 % PSWF real
 function uR = laplace_real_pswf(trg, src, rho, xi)
     r = sqrt(sum((trg-src).^2));
@@ -167,6 +185,11 @@ function uF = laplace_fourier_pswf(k1, k2, k3, xi, charge)
     psi_hat = pswf_hat(kabs, xi);
     uF = 4*pi./ksq .* psi_hat * charge;
     uF(ksq==0) = 0;
+end
+
+function uS = laplace_self_pswf(fself, xi)
+    [~, dPhi] = pswf_erf(0, xi);
+    uS = -fself*dPhi;
 end
 
 %% General window functions
@@ -212,6 +235,7 @@ function [Phi, dPhi, ddPhi] = pswf_erf(r, xi)
 end
 
 function [psi_hat, dpsi_hat, ddpsi_hat] = pswf_hat(k, xi)
+    % Return scaled function \hat\psi(k*r_l/c) / \psi(0), and derivatives
     global c_pswf % WARNING: GLOBAL VARIABLE
     psi   = pswf(0, c_pswf);
     dpsi  = diff(psi);
@@ -245,6 +269,11 @@ function B = stokes_fourier_scaling_hasimoto(ksq, xi)
     B(ksq==0) = 0;
 end
 
+function uS = stokes_self_hasimoto(fself, xi)
+    C = -4*xi/sqrt(pi);
+    uS =  C * fself;
+end
+
 function [Sdiag, Soffd] = stokes_real_decay_beenakker(r, xi)
     Sdiag = erfc(xi*r)/r - 6*xi/sqrt(pi)*exp(-xi^2*r^2) + 4*xi^3*r^2/sqrt(pi)*exp(-xi^2*r^2);
     Soffd = erfc(xi*r)/r + 2*xi/sqrt(pi)*exp(-xi^2*r^2) - 4*xi^3*r^2/sqrt(pi)*exp(-xi^2*r^2);
@@ -253,6 +282,11 @@ end
 function B = stokes_fourier_scaling_beenakker(ksq, xi)
     B = 8*pi./ksq.^2 .* (1 + ksq/(4*xi^2) + ksq.^2/(8*xi^4)) .*  exp(-ksq/4/xi^2);
     B(ksq==0) = 0;
+end
+
+function uS = stokes_self_beenakker(fself, xi)
+    C = -8*xi/sqrt(pi);
+    uS =  C * fself;
 end
 
 % Using a general window function
@@ -267,9 +301,12 @@ end
 function B = stokes_fourier_scaling_window(ksq, xi, win_hat)
     k = sqrt(ksq);
     [psi_hat, dpsi_hat, ddpsi_hat] = win_hat(k, xi);
-    % Check: Missing a factor 2 compared to notes
     B = 8*pi./ksq.^2 .* ( ksq.*ddpsi_hat/2 - k.*dpsi_hat + psi_hat );
     B(ksq==0) = 0;
+end
+function C = stokes_self_scaling_window(xi, win_erfc)
+    [~, dPhic, ~] = win_erfc(0, xi);
+    C = 4 * dPhic;
 end
 
 % === Define functions for use with Ewald summation
@@ -295,6 +332,12 @@ function fourier_fun = stokes_fourier_window(win_hat)
     fourier_scaling = @(ksq, xi) stokes_fourier_scaling_window(ksq, xi, win_hat);
     fourier_fun = @(k1, k2, k3, xi, f) stokes_fourier(k1, k2, k3, xi, f, fourier_scaling);
 end
+% General window: real
+function self_fun = stokes_self_window(win_erfc)
+    self_scaling = @(xi) stokes_self_scaling_window(xi, win_erfc);
+    self_fun = @(fself, xi) fself * self_scaling(xi);
+end
+
 
 % === Helper routines for vector components
 function uR = stokes_real(trg, src, f, xi, decay_fun)
