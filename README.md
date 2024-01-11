@@ -17,6 +17,7 @@ git submodule update --init --recursive
 * `demo_scaling` shows linear scaling
 *  `show_interp_error` analyzes the interpolation error in the difference kernel
 * `dev_*` files are bits and pieces of code used when developing functionality
+  * `dev_ewald_sum` has code for developing and checking Ewald splits
 
 ## Code structure
 
