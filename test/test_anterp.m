@@ -31,9 +31,9 @@ function run_upward_pass(testCase, kernel)
 end
 
 function test_upward_pass_laplace(testCase)
-    run_upward_pass(testCase, kernels.laplace_ewald());
+    run_upward_pass(testCase, kernels.laplace_ewald(tolerance=1e-10));
 end
 
 function test_upward_pass_stokeslet(testCase)
-    run_upward_pass(testCase, kernels.stokeslet_hasimoto());
+    run_upward_pass(testCase, kernels.stokeslet_hasimoto(tolerance=1e-10));
 end

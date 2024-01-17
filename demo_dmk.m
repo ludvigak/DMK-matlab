@@ -7,12 +7,13 @@ tol = 1e-8;
 N = 20000;
 max_level = 2;
 
+dmk_opt   = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel);
+
 points = rand(N, 3)-1/2;
-charges = rand(N, kernel().dim_in)-1/2;
+charges = rand(N, dmk_opt.kernel.dim_in)-1/2;
 
 disp("* DMK")
 atic = tic();
-dmk_opt   = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel);
 dmk_state = dmk_init(points, max_level, dmk_opt);
 u_dmk     = dmk_apply(charges, dmk_state);
 toc(atic)

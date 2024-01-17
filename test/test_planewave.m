@@ -6,12 +6,13 @@ end
 %% Test Functions
 
 
-function run_planeswaves(testCase, kernel)
+function run_planeswaves(testCase, kernel_ref)
     rng(1);
     tol = 1e-9;
+    kernel = kernel_ref(tolerance=tol);
     p = 45;
     max_level = 2;
-    sigma_0 = 1/sqrt(log(1/tol));
+    sigma_0 = kernel.sigma_0;
     r0 = 1;
     D = 3*r0;
     h0 = 2*pi/D;
@@ -90,9 +91,9 @@ function run_planeswaves(testCase, kernel)
 end
 
 function test_planeswaves_laplace(testCase)
-%run_planeswaves(testCase, kernels.laplace_ewald());
+    run_planeswaves(testCase, @kernels.laplace_ewald);
 end
 
 function test_planeswaves_stokeslet(testCase)
-    run_planeswaves(testCase, kernels.stokeslet_hasimoto());
+    run_planeswaves(testCase, @kernels.stokeslet_hasimoto);
 end

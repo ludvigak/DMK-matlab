@@ -6,12 +6,13 @@ end
 %% Test Functions
 
 
-function run_windowed_kernel(testCase, kernel)
+function run_windowed_kernel(testCase, kernel_ref)
     rng(1);
     p = 40;
     N = 20;
     tol = 1e-12;
-    sigma_0 = 1/sqrt(log(1/tol));
+    kernel = kernel_ref(tolerance=tol);
+    sigma_0 = kernel.sigma_0;
     % Setup test
     dim = kernel.dim_in;
     points = rand(N, 3) - 1/2;
@@ -55,9 +56,9 @@ function run_windowed_kernel(testCase, kernel)
 end
 
 function test_windowed_laplace(testCase)
-    run_windowed_kernel(testCase, kernels.laplace_ewald());
+    run_windowed_kernel(testCase, @kernels.laplace_ewald);
 end
 
 function test_windowed_stokeslet(testCase)
-    run_windowed_kernel(testCase, kernels.stokeslet_hasimoto());
+    run_windowed_kernel(testCase, @kernels.stokeslet_hasimoto);
 end

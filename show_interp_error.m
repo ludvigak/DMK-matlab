@@ -2,9 +2,9 @@
 clear
 figure(1); clf
 
-kernel_list = {kernels.laplace_ewald(), kernels.stokeslet_hasimoto()};
+kernel_list = {@kernels.laplace_ewald, @kernels.stokeslet_hasimoto};
 for kidx = 1:numel(kernel_list)
-    kernel = kernel_list{kidx};
+    kernel_ref = kernel_list{kidx};
     step = numel(kernel_list);
     figure(2 + step*(kidx-1))
     clf
@@ -20,7 +20,8 @@ for kidx = 1:numel(kernel_list)
     err_first = [];
     tol_achieved = [];
     for tol = tol_list
-        sigma0 = 1/sqrt(log(1/tol));
+        kernel = kernel_ref(tolerance=tol);
+        sigma0 = kernel.sigma_0;
         interp_err = estimate_interp_error(plist, sigma0, kernel);
         first = find(interp_err < tol, 1);
         if ~isempty(first)

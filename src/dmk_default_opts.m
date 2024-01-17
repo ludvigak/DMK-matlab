@@ -9,8 +9,9 @@ function dmk_opt = dmk_default_opts(args)
     % Unpack args
     p      = args.p;
     tol    = args.tolerance;
-    kernel = args.kernel();
+    kernel = args.kernel(tolerance=tol);
     % Setup mollification width
+    % TODO: Move default parameters into kernel
     sigma_0 = 1/sqrt(log(1/tol));
     if p==-1
         % Estimate suitable p
@@ -24,7 +25,7 @@ function dmk_opt = dmk_default_opts(args)
         end
         cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
     else
-        p_err = estimate_interp_error(p, sigma_0);
+        p_err = estimate_interp_error(p, sigma_0, kernel);
     end
     % Setup root level windowed kernel
     Kmax_win = ceil( 2*log(1/tol));

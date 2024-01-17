@@ -6,6 +6,29 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
         dim_in  = 3;
         dim_out = 3;
     end
+
+    properties
+        sigma_0
+    end
+
+    methods
+        function obj = stokeslet_hasimoto(args)
+        % Constructor, takes either tolerance or sigma_0 as input
+            arguments
+                args.tolerance (1,1) double = 0 % tolerance default=0 (unset)
+                args.sigma_0 (1,1) double = 0   % sigma_0   default=0 (unset)
+            end
+            obj = obj@kernels.SplitKernelInterface(tolerance=args.tolerance);
+            if args.tolerance==0
+                if args.sigma_0==0
+                    error("Need either tolerance or sigma_0")
+                end
+                obj.sigma_0 = args.sigma_0;
+            else
+                obj.sigma_0 = 1/sqrt(log(1/obj.tolerance)); % TODO: Good choice also here?
+            end
+        end
+    end
     
     methods (Static)
         function [Sdiag, Soffd] = real_decay(r, xi)
