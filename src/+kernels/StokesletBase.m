@@ -110,21 +110,19 @@ classdef StokesletBase < kernels.SplitKernelInterface
         function W0hat_fun = winkernel_fourier(self, k1, k2, k3, Ctrunc)
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
-            hf = k1(2)-k1(1); % Should be safe way to get hf
             k = sqrt(ksq);
             Bwin = 8*pi./ksq.^2 .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
             Bwin(k==0) = pi*Ctrunc^4/15;
             Bwin = Bwin .* self.fourier_scaling(ksq, 0);
-            function uhat=apply(fhat)
+            function [uhat, const]=apply(fhat)
+            % const = constant term to be added to solution
                 kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
                 uhat = zeros(size(fhat), like=1+1i);
                 uhat(:, 1) = Bwin .* (ksq.*fhat(:, 1) - k1.*kdotf);
                 uhat(:, 2) = Bwin .* (ksq.*fhat(:, 2) - k2.*kdotf);
                 uhat(:, 3) = Bwin .* (ksq.*fhat(:, 3) - k3.*kdotf);
-                % Adjust k=0 scaling for windowed B
-                % Correcting for weighting in operator here, need to
-                % derive what is going on
-                uhat(ksq==0, :) = fhat(ksq==0, :) * 2/Ctrunc * (2*pi)^3 / hf^3;
+                % Adjust for B windowing used
+                const = fhat(ksq==0, :) * 2/Ctrunc;
             end
             W0hat_fun = @apply;
         end

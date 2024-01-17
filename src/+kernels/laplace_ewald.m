@@ -111,7 +111,8 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             k = sqrt(ksq);
             W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* exp(-ksq * self.sigma_0^2/4);
             W0hat(ksq==0) = 8*pi * Ctrunc^2/4;
-            function uhat=apply(fhat)
+            function [uhat, const] = apply(fhat)
+                const = 0;
                 uhat = W0hat .* fhat;
             end
             W0hat_fun = @apply;

@@ -3,6 +3,7 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, kernel)
     k = hf*(-nf:nf);
     [k1, k2, k3] = ndgrid(k);
     k1 = k1(:); k2 = k2(:); k3 = k3(:);
+    origin = find(k1==0 & k2==0 & k3==0);
     [rvec, V] = approx.chebvander(p);
     kdotr = exp(-1i*k(:).*rvec'/2);
     M = V\(kdotr');
@@ -16,7 +17,9 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, kernel)
         for d=1:dim_in
             ghat(:, d) = approx.kronmat_apply(kdotr, proxy_charges(:, d), 3);
         end
-        uhat = w.*W0hat(ghat);
+        [uhat, const] = W0hat(ghat);
+        uhat = w.*uhat; % Multiply with quadrature weight
+        uhat(origin, :) = uhat(origin, :) + const; % Add constant term
         ufar_expa = zeros(p^3, dim_out);
         for d=1:dim_out
             ufar_expa(:,d) = real( approx.kronmat_apply(M, uhat(:, d), 3) );
