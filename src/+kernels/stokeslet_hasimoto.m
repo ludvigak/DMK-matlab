@@ -28,6 +28,10 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
                 obj.sigma_0 = 1/sqrt(log(1/obj.tolerance)); % TODO: Good choice also here?
             end
         end
+
+        function sigma_l = sigma_level(self, level)
+            sigma_l = self.sigma_0 / 2^level;
+        end
     end
     
     methods (Static)
@@ -70,15 +74,17 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
                 u(range, :) = (udiag + uoffd).';
             end
         end
-
-        function uself = self_interaction(charges, sigma_l)
-            uself = -4/(sigma_l*sqrt(pi)) * charges;
-        end
     end
 
     methods
-        function ures = reskernel(self, targets, sources, f, sigma_l)
+        function uself = self_interaction(self, charges, level)
+            sigma_l = self.sigma_level(level);
+            uself = -4/(sigma_l*sqrt(pi)) * charges;
+        end
+        
+        function ures = reskernel(self, targets, sources, f, level)
         % Stokes residual kernel R_l(r)
+            sigma_l = self.sigma_level(level);
             assert(size(sources, 2)==3)
             if size(targets, 1) ~= 3
                 targets = targets.';
@@ -100,16 +106,16 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             ures = (udiag + uoffd).';
         end
 
-        function umoll = mollkernel(self, targets, sources, f, sigma_l)
+        function umoll = mollkernel(self, targets, sources, f, level)
         % Mollified kernel M_l = S(r) - R_l(r)
             u = self.direct(targets, sources, f);
-            ures = self.reskernel(targets, sources, f, sigma_l);
+            ures = self.reskernel(targets, sources, f, level);
             umoll = u - ures;
         end
 
-        function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, sigma_l)
+        function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, level)
             ksq = k1.^2 + k2.^2 + k3.^2;
-            xi = 1/sigma_l;
+            xi = 1/self.sigma_level(level);
             B = self.fourier_scaling(ksq, xi);
             Nf = numel(k1);
             function uhat=apply(fhat)
@@ -121,15 +127,15 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             Mlhat_fun = @apply;
         end
         
-        function udiff = diffkernel(self, targets, sources, f, sigma_l)
+        function udiff = diffkernel(self, targets, sources, f, level)
         % Difference kernel D_l(r) = M_{l+1}(r) - M_l(r)
-            sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2
-            udiff = mollkernel(self, targets, sources, f, sigma_lp1) - ...
-                    mollkernel(self, targets, sources, f, sigma_l);
+            udiff = mollkernel(self, targets, sources, f, level+1) - ...
+                    mollkernel(self, targets, sources, f, level);
         end
         
-        function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, sigma_l)
+        function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, level)
         % Fourier transform of difference kernel
+            sigma_l = self.sigma_level(level);
             ksq = k1.^2 + k2.^2 + k3.^2;
             sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2;
             xi_l = 1/sigma_l;
@@ -148,12 +154,12 @@ classdef stokeslet_hasimoto < kernels.SplitKernelInterface
             Dlhat_fun = @apply;
         end
         
-        function W0hat_fun = winkernel_fourier(self, k1, k2, k3, sigma_0, Ctrunc)
+        function W0hat_fun = winkernel_fourier(self, k1, k2, k3, Ctrunc)
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             hf = k1(2)-k1(1); % Should be safe way to get hf
             k = sqrt(ksq);
-            xi = 1/sigma_0;
+            xi = 1/self.sigma_0;
             B = self.fourier_scaling(ksq, xi);
             Bwin = B .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
             Bwin(k==0) = 0; % FIX?

@@ -10,13 +10,10 @@ function dmk_opt = dmk_default_opts(args)
     p      = args.p;
     tol    = args.tolerance;
     kernel = args.kernel(tolerance=tol);
-    % Setup mollification width
-    % TODO: Move default parameters into kernel
-    sigma_0 = 1/sqrt(log(1/tol));
     if p==-1
         % Estimate suitable p
         p_list = 2:2:100;
-        interp_err = estimate_interp_error(p_list, sigma_0, kernel);
+        interp_err = estimate_interp_error(p_list, kernel);
         idx = find(interp_err < tol, 1);
         p = p_list(idx);
         p_err = interp_err(idx);
@@ -25,13 +22,14 @@ function dmk_opt = dmk_default_opts(args)
         end
         cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
     else
-        p_err = estimate_interp_error(p, sigma_0, kernel);
+        p_err = estimate_interp_error(p, kernel);
     end
+    % TODO: Move default parameters into kernel
     % Setup root level windowed kernel
     Kmax_win = ceil( 2*log(1/tol));
     nf_win = Kmax_win;
     hf_win = Kmax_win/nf_win;
-    Ctrunc = sqrt(3) + 6*sigma_0;    
+    Ctrunc = sqrt(3) + 6*kernel.sigma_0;    
     % Setup planewave ops
     r0 = 1;
     D = 3*r0;
@@ -43,7 +41,6 @@ function dmk_opt = dmk_default_opts(args)
     dmk_opt.kernel = kernel;
     dmk_opt.p = p;
     dmk_opt.tol = tol;
-    dmk_opt.sigma_0 = sigma_0;
     dmk_opt.nf_win = nf_win;
     dmk_opt.hf_win = hf_win;
     dmk_opt.Ctrunc = Ctrunc;
@@ -66,7 +63,7 @@ function dmk_opt = dmk_default_opts(args)
     % Print error estimates
     cprintf(dmk_opt, "[dmk_default_opts] estimated interp. rel.err=%.2e\n", p_err);
     trunc_err = norm(...
-        kernel.diffkernel([1 0 0], [0 0 0], ones(1, kernel.dim_in), sigma_0), ...
+        kernel.diffkernel([1 0 0], [0 0 0], ones(1, kernel.dim_in), 0), ...
         inf);
     cprintf(dmk_opt, "[dmk_default_opts] estimated kern. trunc.err=%.2e\n", trunc_err);
 end

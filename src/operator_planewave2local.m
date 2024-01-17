@@ -1,4 +1,4 @@
-function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel)
+function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, kernel)
     ViMinc = cell(1, max_level+1);
     Dlhat  = cell(1, max_level+1);
     w      = cell(1, max_level+1);
@@ -6,14 +6,13 @@ function Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kern
     for l=0:max_level
         rl = 1/2.^l;
         hl = h0 / rl;
-        sigma_l = sigma_0 / 2^l;
         k = hl*(-nf:nf)';
         Minc = exp(1i*rvec.*k'/2*rl);
         ViMinc{l+1} = V\Minc;
         [k1, k2, k3] = ndgrid(k, k, k);
         % Dlhat is a closure that is applied to Psi at runtime,
         % to account for vectors
-        Dlhat{l+1} = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), sigma_l);
+        Dlhat{l+1} = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), l);
         % w_l factor 
         w{l+1} = 1/(2*pi)^3 * hl^3;
     end

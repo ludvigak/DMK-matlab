@@ -30,21 +30,21 @@ classdef SplitKernelInterface < handle
         % data: (Nsrc, dim_in)
         % returns: (Ntrg, dim_out)
 
-        ures = reskernel(targets, points, charges, sigma_l)
+        ures = reskernel(targets, points, charges, level)
         % Residual kernel R_l(r)
         
-        udiff = diffkernel(targets, points, charges, sigma_l)
+        udiff = diffkernel(targets, points, charges, level)
         % Difference kernel D_l(r)
 
-        Dlhat_fun = diffkernel_fourier(k1, k2, k3, sigma_l)
+        Dlhat_fun = diffkernel_fourier(k1, k2, k3, level)
         % Fourier transform o difference kernel D_l(r)
         % returns: function handle that applies kernel
         
-        W0hat_fun = winkernel_fourier(k1, k2, k3, sigma_0, Ctrunc)
-        % Fourier transform of windowed mollified  kernel
+        W0hat_fun = winkernel_fourier(k1, k2, k3, Ctrunc)
+        % Fourier transform of windowed mollified kernel at 0 level
         % returns: function handle that applies kernel
 
-        uself = self_interaction(charges, sigma_l)
+        uself = self_interaction(charges, level)
         % Self interaction
     end
 end

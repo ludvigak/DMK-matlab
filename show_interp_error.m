@@ -21,8 +21,7 @@ for kidx = 1:numel(kernel_list)
     tol_achieved = [];
     for tol = tol_list
         kernel = kernel_ref(tolerance=tol);
-        sigma0 = kernel.sigma_0;
-        interp_err = estimate_interp_error(plist, sigma0, kernel);
+        interp_err = estimate_interp_error(plist, kernel);
         first = find(interp_err < tol, 1);
         if ~isempty(first)
             p_first(end+1) = plist(first);

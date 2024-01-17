@@ -25,11 +25,12 @@ function run_windowed_kernel(testCase, kernel_ref)
     box_proxy_points = tree.box_grid(1, rvec);
     box_proxy_charges = proxy_charges{1};
     % Fourier setup
+    % TODO: Move into kernel
     Kmax = ceil( 2.1*log(1/tol) );
     nf = Kmax;
     hf = Kmax/nf;
     Ctrunc = sqrt(3) + 6*sigma_0;    
-    Twin = operator_windowed(p, hf, nf, Ctrunc, sigma_0, kernel);
+    Twin = operator_windowed(p, hf, nf, Ctrunc, kernel);
     % Evaluate windowed kernel at proxy points
     far_expa = Twin(box_proxy_charges);
     field_fourier = zeros(p^3, kernel.dim_out);
@@ -39,7 +40,7 @@ function run_windowed_kernel(testCase, kernel_ref)
     % Evaluate mollified potential at proxies directly from source points
     targets = box_proxy_points;
     field_direct = kernel.direct(targets, points, charges) - ...
-        kernel.reskernel(targets, points, charges, sigma_0);
+        kernel.reskernel(targets, points, charges, 0);
     % Compare
     Emax = norm(field_direct - field_fourier, inf);
     testCase.verifyLessThan(Emax, tol);
@@ -51,7 +52,7 @@ function run_windowed_kernel(testCase, kernel_ref)
     for d=1:kernel.dim_out
         field_fourier(:, d) = approx.kronmat_apply(V, expa(:, d), 3);
     end
-    uself = kernel.self_interaction(single_charge, sigma_0);
+    uself = kernel.self_interaction(single_charge, 0);
     testCase.verifyEqual(uself(1, :), -field_fourier(1, :), abstol=tol)
 end
 

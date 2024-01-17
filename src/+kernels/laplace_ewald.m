@@ -28,6 +28,10 @@ classdef laplace_ewald < kernels.SplitKernelInterface
                 obj.sigma_0 = 1/sqrt(log(1/obj.tolerance));
             end
         end
+
+        function sigma_l = sigma_level(self, level)
+            sigma_l = self.sigma_0 / 2^level;
+        end
     end
     
     methods (Static)
@@ -53,9 +57,12 @@ classdef laplace_ewald < kernels.SplitKernelInterface
                 u = u + (charges(range).' * K).';
             end
         end
-
-        function ures = reskernel(targets, points, charges, sigma_l)
+    end
+    
+    methods
+        function ures = reskernel(self, targets, points, charges, level)
         % Laplace residual kernel R_l(r)
+            sigma_l = self.sigma_level(level);
             if size(targets, 1) ~= 3
                 targets = targets.';
             end
@@ -68,8 +75,9 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             ures = (charges.' * Rl).';
         end
 
-        function udiff = diffkernel(targets, points, charges, sigma_l)
+        function udiff = diffkernel(self, targets, points, charges, level)
         % Laplace difference kernel D_l(r)
+            sigma_l = self.sigma_level(level);
             if size(targets, 1) ~= 3
                 targets = targets.';
             end
@@ -82,9 +90,10 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             udiff = Dl.' * charges;
         end
         
-        function Dlhat_fun = diffkernel_fourier(k1, k2, k3, sigma_l)
+        function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, level)
         % Fourier transform of Laplace difference kernel
         % Returns operator that applies kernel
+            sigma_l = self.sigma_level(level);
             sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2
             ksq = k1.^2 + k2.^2 + k3.^2;
             Dlhat = 4*pi*(exp(-ksq*sigma_lp1^2/4) - exp(-ksq*sigma_l^2/4))./ksq;
@@ -95,11 +104,11 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             Dlhat_fun = @apply;
         end
 
-        function W0hat_fun = winkernel_fourier(k1, k2, k3, sigma_0, Ctrunc)
+        function W0hat_fun = winkernel_fourier(self, k1, k2, k3, Ctrunc)
         % Fourier transform of  windowed mollified Laplace kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
-            W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* exp(-ksq * sigma_0^2/4);
+            W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* exp(-ksq * self.sigma_0^2/4);
             W0hat(ksq==0) = 8*pi * Ctrunc^2/4;
             function uhat=apply(fhat)
                 uhat = W0hat .* fhat;
@@ -107,7 +116,8 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             W0hat_fun = @apply;
         end
 
-        function uself = self_interaction(charges, sigma_l)
+        function uself = self_interaction(self, charges, level)
+            sigma_l = self.sigma_level(level);
             uself = -charges*2/(sqrt(pi)*sigma_l);
         end
     end

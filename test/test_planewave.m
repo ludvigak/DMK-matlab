@@ -12,7 +12,6 @@ function run_planeswaves(testCase, kernel_ref)
     kernel = kernel_ref(tolerance=tol);
     p = 45;
     max_level = 2;
-    sigma_0 = kernel.sigma_0;
     r0 = 1;
     D = 3*r0;
     h0 = 2*pi/D;
@@ -20,11 +19,10 @@ function run_planeswaves(testCase, kernel_ref)
     nf = ceil(K0/h0);
     dim = kernel.dim_in;
     Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, sigma_0, kernel);
+    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, kernel);
     Tpwshift = operator_planewave_shift(h0, nf);
     for l = 0:max_level
         rl = 1/2^l;
-        sigma_l = sigma_0 / 2^l;
         hl = h0 / rl;
         Kl = 4/rl * log(1/tol);
         nf = ceil(Kl/hl);
@@ -39,7 +37,7 @@ function run_planeswaves(testCase, kernel_ref)
         k1 = hl*m1(:);
         k2 = hl*m2(:);
         k3 = hl*m3(:);    
-        D0hat = kernel.diffkernel_fourier(k1, k2, k3, sigma_l);
+        D0hat = kernel.diffkernel_fourier(k1, k2, k3, l);
         % w_l factor 
         wl = 1/(2*pi)^3 * hl^3;
         % Source expansion
@@ -49,7 +47,7 @@ function run_planeswaves(testCase, kernel_ref)
         % Compute udiff
         udiff_fourier = real( (wl .* D0hat(ghat)).' * exp(1i*kdotx) ).';
         % Compare to direct reference
-        udiff_direct = kernel.diffkernel(target, points, charges, sigma_l);
+        udiff_direct = kernel.diffkernel(target, points, charges, l);
         % Compare direct and Fourier
         testCase.verifyEqual(udiff_fourier, udiff_direct, 'abstol', tol);
         % Form proxy charges:
@@ -80,7 +78,7 @@ function run_planeswaves(testCase, kernel_ref)
                     Psi_shifted = Tpwshift(Psi, i, j, k);
                     lambda_shifted = Tpw2poly(Psi_shifted, l);
                     udiff_shifted = real( kron(Ez, kron(Ey, Ex))* lambda_shifted );
-                    udiff_shifted_direct = kernel.diffkernel(target - newCenter, points, charges, sigma_l);
+                    udiff_shifted_direct = kernel.diffkernel(target - newCenter, points, charges, l);
                     testCase.verifyEqual(udiff_shifted, ...
                                          udiff_shifted_direct, ...
                                          'abstol', tol);

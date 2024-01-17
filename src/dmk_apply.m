@@ -3,7 +3,6 @@ function u = dmk_apply(charges, dmk_state)
     % Unpack some opts
     tree = dmk_state.tree;
     p = dmk_state.opt.p;
-    sigma_0 = dmk_state.opt.sigma_0;
     % Upward pass
     tic_up = tic();
     proxy_charges = init_proxy_charges(tree, charges, p);
@@ -27,11 +26,11 @@ function u = dmk_apply(charges, dmk_state)
     cprintf(opt, '[dmk_apply] eval expansions:    %.3f\n', t_eval);
     % Near interactions
     tic_local = tic();
-    ures = local_interactions(tree, charges, sigma_0, dmk_state.opt.kernel);
+    ures = local_interactions(tree, charges, dmk_state.opt.kernel);
     t_local = toc(tic_local);
     cprintf(opt, '[dmk_apply] local interactions: %.3f\n', t_local);
     % Self interactions
-    uself = self_interaction(tree, charges, sigma_0, dmk_state.opt.kernel);
+    uself = self_interaction(tree, charges, dmk_state.opt.kernel);
     % Sum up
     u = ufar + ures + uself;
     cprintf(opt, '[dmk_apply]               SUM = %.3f\n', t_down+t_up+t_eval+t_local);        

@@ -37,20 +37,19 @@ function test_kernel(testCase)
     u = kernel.direct(targets, sources, forces);
     testCase.verifyEqual(u, uref, abstol=1e-14);
     % Test residual
-    sigma_0 = kernel.sigma_0;
-    ures = kernel.reskernel(targets, sources, forces, sigma_0);
+    ures = kernel.reskernel(targets, sources, forces, 0);
     % Should be properly decayed
     testCase.verifyLessThan(norm(ures(:), inf), tol);
-    % Should be ~ same with very large sigma_0
-    usame = kernel.reskernel(targets, sources, forces, 1e5);
+    % Should be ~ same with very large sigma
+    usame = kernel.reskernel(targets, sources, forces, -20); % Artifically make sigma large
     testCase.verifyEqual(uref, usame, reltol=1e-4)
 end
 
 function test_residual_decay(testCase)
     tol = 1e-13;
     kernel = kernels.stokeslet_hasimoto(tolerance=tol);
-    sigma_0 = 1/sqrt(log(1/tol));    
-    hasimoto_trunc_err = norm(kernel.diffkernel([1 0 0], [0 0 0], [1 1 1], sigma_0), inf);
+    level = 0;
+    hasimoto_trunc_err = norm(kernel.diffkernel([1 0 0], [0 0 0], [1 1 1], level), inf);
     testCase.verifyLessThan(hasimoto_trunc_err, 1e-12);
 end
 
@@ -63,9 +62,8 @@ function test_moll(testCase)
     sources = rand(Nsrc, 3);
     forces  = rand(Nsrc, 3);
     targets = rand(Ntrg, 3);
-    sigma_0 = 1/sqrt(log(1/tol));    
-    umoll = kernel.mollkernel(targets, sources, forces, sigma_0);
-    ures = kernel.reskernel(targets, sources, forces, sigma_0);
+    umoll = kernel.mollkernel(targets, sources, forces, 0);
+    ures = kernel.reskernel(targets, sources, forces, 0);
     u = kernel.direct(targets, sources, forces);
     testCase.verifyEqual(u, umoll+ures, reltol=1e-15)
 end
@@ -80,19 +78,17 @@ function test_diff(testCase)
     sources = rand(Nsrc, 3);
     forces  = rand(Nsrc, 3);
     targets = rand(Ntrg, 3);
-    sigma_0 = 1/sqrt(log(1/tol));
-    sigma_1 = sigma_0 / 2;
-    umoll0 = kernel.mollkernel(targets, sources, forces, sigma_0);
-    umoll1 = kernel.mollkernel(targets, sources, forces, sigma_1);
-    udiff0 = kernel.diffkernel(targets, sources, forces, sigma_0);
+    umoll0 = kernel.mollkernel(targets, sources, forces, 0);
+    umoll1 = kernel.mollkernel(targets, sources, forces, 1);
+    udiff0 = kernel.diffkernel(targets, sources, forces, 0);
     testCase.verifyEqual(udiff0, umoll1-umoll0, reltol=1e-15)
     % Fourier modes
     [k1, k2, k3] = ndgrid(-5:5);
     k1 = k1(:); k2 = k2(:); k3 = k3(:);
     Nf = numel(k1);
-    Fmoll0 = kernel.mollkernel_fourier(k1, k2, k3, sigma_0);
-    Fmoll1 = kernel.mollkernel_fourier(k1, k2, k3, sigma_1);
-    Fdiff0 = kernel.diffkernel_fourier(k1, k2, k3, sigma_0);
+    Fmoll0 = kernel.mollkernel_fourier(k1, k2, k3, 0);
+    Fmoll1 = kernel.mollkernel_fourier(k1, k2, k3, 1);
+    Fdiff0 = kernel.diffkernel_fourier(k1, k2, k3, 0);
     fhat = rand(Nf, 3) + 1i*rand(Nf, 3);
     testCase.verifyEqual(Fdiff0(fhat), (Fmoll1(fhat)-Fmoll0(fhat)), abstol=1e-14);
 end
