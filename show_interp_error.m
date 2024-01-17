@@ -2,7 +2,9 @@
 clear
 figure(1); clf
 
-kernel_list = {@kernels.laplace_ewald, @kernels.stokeslet_hasimoto};
+kernel_list = {@kernels.laplace_ewald,
+               @kernels.laplace_pswf,
+               @kernels.stokeslet_hasimoto};
 for kidx = 1:numel(kernel_list)
     kernel_ref = kernel_list{kidx};
     step = numel(kernel_list);

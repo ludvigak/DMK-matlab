@@ -48,7 +48,9 @@ classdef laplace_pswf < kernels.SplitKernelInterface
 
         function y = pswf_erf(self, x)
             y = ones(size(x));
-            y(x < 1) = self.pswf_erf_cheb(x(x < 1));
+            mask = (x<1);
+            xm = x(mask);
+            y(mask) = self.pswf_erf_cheb(xm);
         end
 
         function y = pswf_erfc(self, x)
