@@ -12,7 +12,6 @@ function run_windowed_kernel(testCase, kernel_ref)
     N = 20;
     tol = 1e-12;
     kernel = kernel_ref(tolerance=tol);
-    sigma_0 = kernel.sigma_0;
     % Setup test
     dim = kernel.dim_in;
     points = rand(N, 3) - 1/2;
@@ -29,7 +28,7 @@ function run_windowed_kernel(testCase, kernel_ref)
     Kmax = ceil( 2.1*log(1/tol) );
     nf = Kmax;
     hf = Kmax/nf;
-    Ctrunc = sqrt(3) + 6*sigma_0;    
+    Ctrunc = sqrt(3) + 1;
     Twin = operator_windowed(p, hf, nf, Ctrunc, kernel);
     % Evaluate windowed kernel at proxy points
     far_expa = Twin(box_proxy_charges);
@@ -58,6 +57,10 @@ end
 
 function test_windowed_laplace(testCase)
     run_windowed_kernel(testCase, @kernels.laplace_ewald);
+end
+
+function test_windowed_pswf(testCase)
+    run_windowed_kernel(testCase, @kernels.laplace_pswf);
 end
 
 function test_windowed_stokeslet(testCase)

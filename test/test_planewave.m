@@ -92,6 +92,10 @@ function test_planeswaves_laplace(testCase)
     run_planeswaves(testCase, @kernels.laplace_ewald);
 end
 
+function test_planeswaves_laplace_pswf(testCase)
+    run_planeswaves(testCase, @kernels.laplace_pswf);
+end
+
 function test_planeswaves_stokeslet(testCase)
     run_planeswaves(testCase, @kernels.stokeslet_hasimoto);
 end

@@ -29,7 +29,7 @@ function dmk_opt = dmk_default_opts(args)
     Kmax_win = ceil( 2*log(1/tol));
     nf_win = Kmax_win;
     hf_win = Kmax_win/nf_win;
-    Ctrunc = sqrt(3) + 6*kernel.sigma_0;    
+    Ctrunc = sqrt(3) + 1;
     % Setup planewave ops
     r0 = 1;
     D = 3*r0;
@@ -63,7 +63,7 @@ function dmk_opt = dmk_default_opts(args)
     % Print error estimates
     cprintf(dmk_opt, "[dmk_default_opts] estimated interp. rel.err=%.2e\n", p_err);
     trunc_err = norm(...
-        kernel.diffkernel([1 0 0], [0 0 0], ones(1, kernel.dim_in), 0), ...
+        kernel.diffkernel([0.9999999 0 0], [0 0 0], ones(1, kernel.dim_in), 0), ...
         inf);
     cprintf(dmk_opt, "[dmk_default_opts] estimated kern. trunc.err=%.2e\n", trunc_err);
 end
