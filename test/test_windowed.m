@@ -25,7 +25,7 @@ function run_windowed_kernel(testCase, kernel_ref)
     box_proxy_charges = proxy_charges{1};
     % Fourier setup
     % TODO: Move into kernel
-    Kmax = ceil( 2.1*log(1/tol) );
+    Kmax = ceil( kernel.Kmax );
     nf = Kmax;
     hf = Kmax/nf;
     Ctrunc = sqrt(3) + 1;

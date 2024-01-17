@@ -15,7 +15,7 @@ function run_planeswaves(testCase, kernel_ref)
     r0 = 1;
     D = 3*r0;
     h0 = 2*pi/D;
-    K0 = 4/1 * log(1/tol);
+    K0 = 2*kernel.Kmax;
     nf = ceil(K0/h0);
     dim = kernel.dim_in;
     Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
@@ -24,7 +24,7 @@ function run_planeswaves(testCase, kernel_ref)
     for l = 0:max_level
         rl = 1/2^l;
         hl = h0 / rl;
-        Kl = 4/rl * log(1/tol);
+        Kl = 2/rl * kernel.Kmax;
         nf = ceil(Kl/hl);
         % Set up random sources in box [-1/2, 1/2]^3
         N = 20;

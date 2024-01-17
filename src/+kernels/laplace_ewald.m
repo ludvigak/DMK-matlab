@@ -27,6 +27,7 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             else
                 obj.sigma_0 = 1/sqrt(log(1/obj.tolerance));
             end
+            obj.Kmax = 2/obj.sigma_0^2;
         end
 
         function sigma_l = sigma_level(self, level)

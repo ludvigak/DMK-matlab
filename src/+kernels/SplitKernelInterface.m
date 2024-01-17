@@ -2,6 +2,9 @@ classdef SplitKernelInterface < handle
 % Abstract class for interfacing to split kernels
     properties
         tolerance
+        % Tolerance used in kernel
+        Kmax
+        % Maximum Fourier mode needed to resolve kernel
     end
     methods
         function obj = SplitKernelInterface(args)

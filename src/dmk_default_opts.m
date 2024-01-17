@@ -26,7 +26,7 @@ function dmk_opt = dmk_default_opts(args)
     end
     % TODO: Move default parameters into kernel
     % Setup root level windowed kernel
-    Kmax_win = ceil( 2*log(1/tol));
+    Kmax_win = ceil(kernel.Kmax);
     nf_win = Kmax_win;
     hf_win = Kmax_win/nf_win;
     Ctrunc = sqrt(3) + 1;
@@ -34,7 +34,7 @@ function dmk_opt = dmk_default_opts(args)
     r0 = 1;
     D = 3*r0;
     h0 = 2*pi/D;
-    K0 = 4/1 * log(1/tol);
+    K0 = 2*kernel.Kmax;
     nf = ceil(K0/h0);
     % Store in struct
     dmk_opt = struct();

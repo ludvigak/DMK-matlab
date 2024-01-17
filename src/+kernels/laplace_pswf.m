@@ -32,6 +32,7 @@ classdef laplace_pswf < kernels.SplitKernelInterface
                 obj.c_pswf = -log(args.tolerance / 1.2) + 1; % Heuristic from DKM paper values
             end
             % Init PSWF
+            obj.Kmax = obj.c_pswf;
             obj.pswf_cheb = pswf(0, obj.c_pswf);
             obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
             x = chebfun(@(x) x);
