@@ -1,10 +1,11 @@
 classdef StokesletBase < kernels.SplitKernelInterface
 % Base class for Stokeslet splits, contains everything that is not split-specific
 
-    methods (Abstract)
-        B = fourier_scaling(self, ksq, level)
+% Interface functions to be defined in subclass
+    methods (Abstract)        
+        fourier_decay = fourier_scaling(self, ksq, level)
         % Fourier scaling, corresponding to Fourier transform of screening function
-        [Sdiag, Soffd] = real_decay(self, r, level)
+        [Rdiag, Roffd] = real_decay(self, r, level)
         % Diagonal and offdiagonal decay of residual stokeslet, scaled by r
     end
     

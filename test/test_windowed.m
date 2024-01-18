@@ -66,3 +66,7 @@ end
 function test_windowed_stokeslet(testCase)
     run_windowed_kernel(testCase, @kernels.stokeslet_hasimoto);
 end
+
+function test_windowed_stokeslet_pswf(testCase)
+    run_windowed_kernel(testCase, @kernels.stokeslet_pswf);
+end

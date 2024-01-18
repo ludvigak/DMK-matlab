@@ -1,11 +1,12 @@
 clear; rng(1);
 
-kernel = @kernels.laplace_ewald;
+%kernel = @kernels.laplace_ewald;
 %kernel = @kernels.laplace_pswf;
 %kernel = @kernels.stokeslet_hasimoto;
+kernel = @kernels.stokeslet_pswf;
 
 tol = 1e-8;
-N = 20000;
+N = 2000;
 max_level = 2;
 
 dmk_opt   = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel);

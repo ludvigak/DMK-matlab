@@ -17,7 +17,7 @@ target = points(1, :); % With self-interaction
 %target = [L L L/2]/2; % Without self-interaction
 
 %% Laplace
-disp('* Laplace Classical')
+disp('* Laplace Ewald')
 % Setup charge neutral system
 charges = rand(N, 1);
 charges = charges - sum(charges)/N;
@@ -46,7 +46,6 @@ assert(err_laplace_pswf < 1e-12);
 if showplots
     laplace_plots();
 end
-
 
 %% Stokes
 disp('* Stokes: Hasimoto')
@@ -87,7 +86,7 @@ u_experf = ewald_sum(target, points, strengths, ...
 err_experf = norm(u_beenakker - u_experf)
 assert(err_experf < 1e-13)
 
-disp('* Stokes: PSWF')
+disp('* Stokes: PSWF/erf')
 % Finally run Stokes using PSWF.
 c_pswf = 40; % We need a bigger c
 rl = L;
@@ -376,10 +375,11 @@ end
 
 %% MISC PLOTTING
 function laplace_plots()
+    global c_pswf
     % Plot things Laplace
     L = 1;
-    xi_ewald = 2*pi/L;
-    xi_pswf = 4*xi_ewald;
+    xi_ewald = 0.8*2*pi/L;
+    xi_pswf = L/2 * c_pswf;
     kmax = 2*xi_ewald*sqrt(log(1/eps));
     kmax_pswf = 2*xi_pswf;
     % Make sure last point of PSWF bandwidth is included
@@ -394,7 +394,8 @@ function laplace_plots()
     grid on
     legend
     subplot(1, 2, 2)
-    r = linspace(0, L, 50).';
+    rl = L/xi_pswf * c_pswf/2;
+    r = [linspace(0, rl, 50)].';
     real_ewald = 0*r;
     real_pswf = 0*r;
     for i=1:numel(r)
@@ -407,15 +408,15 @@ function laplace_plots()
     axis([0 L eps inf])
     legend
     grid on
+    drawnow
 end    
 
 function stokes_plots()
     % Plot things Stokes
     global c_pswf % WARNING: GLOBAL VARIABLE
-    c_pswf = 40;
     L = 1;
-    xi_ewald = 2*pi/L;
-    xi_pswf = 4*xi_ewald;
+    xi_ewald = 0.95*2*pi/L;
+    xi_pswf = L/2 * c_pswf;
     real_pswf_fun = stokes_real_window(@pswf_erfc);
     fourier_pswf_fun = stokes_fourier_window(@pswf_hat);    
     kmax = 2*xi_ewald*sqrt(log(1/eps));
@@ -433,14 +434,14 @@ function stokes_plots()
     semilogy(kvec, fourier_beenakker, displayname="Stokes Fourier Beenakker")
     hold on
     semilogy(kvec, fourier_hasimoto, '-', displayname="Stokes Fourier Hasimoto")
-    semilogy(kvec, fourier_pswf, '.-', displayname="Stokes Fourier PSWF")
+    semilogy(kvec, fourier_pswf, '.-', displayname="Stokes Fourier PSWF/erf")
     stem(kmax_pswf, fourier_pswf(find(kvec==kmax_pswf, 1)), displayname="PSWF bandwidth")
     axis([0 kvec(end) eps 1e5])
     xlabel('|k|')
     grid on
     legend
     subplot(1, 2, 2)
-    rl = 1/xi_pswf * c_pswf/2;
+    rl = L/xi_pswf * c_pswf/2;
     r = [linspace(0, rl, 50) rl:rl/50:L].';
     [real_hasimoto, real_beenakker, real_pswf] = deal(0*r);
     for i=1:numel(r)
@@ -451,9 +452,10 @@ function stokes_plots()
     semilogy(r, real_beenakker, displayname="Stokes Real Beenakker")
     hold on
     semilogy(r, real_hasimoto, '-', displayname="Stokes Real Hasimoto")
-    semilogy(r, real_pswf, '.-', displayname="Stokes Real PSWF")
+    semilogy(r, real_pswf, '.-', displayname="Stokes Real PSWF/erf")
     stem(rl, real_pswf(find(r==rl, 1)), displayname="PSWF cutoff")
     axis([0 L eps inf])
     legend
     grid on
+    drawnow
 end    

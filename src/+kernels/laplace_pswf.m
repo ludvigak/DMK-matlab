@@ -29,7 +29,15 @@ classdef laplace_pswf < kernels.SplitKernelInterface
                 end
                 obj.c_pswf = args.c_pswf;
             else
-                obj.c_pswf = -log(args.tolerance / 1.2) + 1; % Heuristic from DKM paper values
+                % TODO: need something better for bandwidth selection
+                for c_pswf=1:0.5:60
+                    psi = pswf(0, c_pswf);
+                    if psi(1) < args.tolerance
+                        break
+                    end
+                end
+                obj.c_pswf = c_pswf - 3; % Heuristic
+                %obj.c_pswf = -log(args.tolerance / 1.2) + 1; % Heuristic from DKM paper values
             end
             % Init PSWF
             obj.Kmax = obj.c_pswf;

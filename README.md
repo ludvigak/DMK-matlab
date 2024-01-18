@@ -23,5 +23,6 @@ git submodule update --init --recursive
 
 * `external/` contains third-party packages in the form of Git submodules
 * `src/` contains all routines needed for DMKL
+* `src/+kernels/` contains kernel splittings
 * `src/+approx/` is a package with the routines for     approximation using Chebyshev functions and tensor product grids. Holds its own tests in `tests.m`
 * `test/` contains all unit tests

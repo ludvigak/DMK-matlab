@@ -99,3 +99,7 @@ end
 function test_planeswaves_stokeslet(testCase)
     run_planeswaves(testCase, @kernels.stokeslet_hasimoto);
 end
+
+function test_planeswaves_stokeslet_pswf(testCase)
+    run_planeswaves(testCase, @kernels.stokeslet_pswf);
+end
