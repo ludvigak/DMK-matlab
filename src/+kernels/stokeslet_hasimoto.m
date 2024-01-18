@@ -25,7 +25,7 @@ classdef stokeslet_hasimoto < kernels.StokesletBase
                 end
                 obj.sigma_0 = args.sigma_0;
             else
-                obj.sigma_0 = 1/sqrt(log(1/obj.tolerance)); % TODO: Good choice also here?
+                obj.sigma_0 = 1/sqrt(log(1/obj.tolerance)); % TODO
             end
             obj.Kmax = 2/obj.sigma_0^2;
         end

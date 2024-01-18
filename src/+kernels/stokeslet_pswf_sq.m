@@ -1,8 +1,8 @@
-classdef stokeslet_pswf < kernels.StokesletFourierSplit
-% Stokes kernel split using the Hasimoto-like PSWF decomposition
+classdef stokeslet_pswf_sq < kernels.StokesletFourierSplit
+% Stokes kernel split using the decomposition with PSWF(k^2) decay
 
     properties (Constant)
-        name    = "Stokes PSWF";
+        name    = "Stokes PSWF k^2";
         dim_in  = 3;
         dim_out = 3;
     end
@@ -14,7 +14,7 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
     end
 
     methods
-        function obj = stokeslet_pswf(args)
+        function obj = stokeslet_pswf_sq(args)
         % Constructor, takes either tolerance or sigma_0 as input
             arguments
                 args.tolerance (1,1) double = 0 % tolerance default=0 (unset)
@@ -35,11 +35,11 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
                         break
                     end
                 end
-                obj.c_pswf = c_pswf + 4; % Heuristic
+                obj.c_pswf = c_pswf*2; % Heuristic for k^2
             end
             % Init PSWF
             psi = pswf(0, obj.c_pswf);
-            obj.Kmax = obj.c_pswf;           
+            obj.Kmax = obj.c_pswf;
             obj.pswf_cheb = psi;
             % Precompute residual decay
             % (enough to do at zero-level since scale-invariant)
@@ -49,14 +49,10 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
         function gamma_hat = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
             psi = self.pswf_cheb;
-            dpsi = diff(psi);
-            d2psi = diff(dpsi);
-            alpha = -d2psi(0)/psi(0)*rl^2/self.c_pswf^2/2;
-            k = sqrt(ksq);
-            psi_arg = k*rl/self.c_pswf;
-            gamma_hat = zeros(size(psi_arg));
+            psi_arg = ksq*rl^2/self.c_pswf^2;
             supp_mask = psi_arg <= 1; % Truncate to PSWF support
-            gamma_hat(supp_mask) = psi(psi_arg(supp_mask))/psi(0) .* (1 + alpha*ksq(supp_mask));
+            gamma_hat = zeros(size(psi_arg));
+            gamma_hat(supp_mask) = psi(psi_arg(supp_mask))/psi(0);
         end
     end
 end

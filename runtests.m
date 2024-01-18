@@ -8,5 +8,10 @@ folderTests = TestSuite.fromFolder("test");
 
 suite = [approxTests, folderTests];
 rng(1);
-disp(suite.run().table())
+results = suite.run();
+disp(results.table())
 toc
+
+fprintf('\n')
+results.assertSuccess();
+disp('All tests passed!')
