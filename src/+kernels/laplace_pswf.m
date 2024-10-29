@@ -38,6 +38,7 @@ classdef laplace_pswf < kernels.SplitKernelInterface
                 end
                 obj.c_pswf = c_pswf - 3; % Heuristic
                 %obj.c_pswf = -log(args.tolerance / 1.2) + 1; % Heuristic from DKM paper values
+                fprintf('[laplace_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
             % Init PSWF
             obj.Kmax = obj.c_pswf;

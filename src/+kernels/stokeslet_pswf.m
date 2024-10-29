@@ -36,6 +36,7 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
                     end
                 end
                 obj.c_pswf = c_pswf + 4; % Heuristic
+                fprintf('[stokeslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
             % Init PSWF
             psi = pswf(0, obj.c_pswf);
@@ -49,14 +50,15 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
         function gamma_hat = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
             psi = self.pswf_cheb;
+            psi = psi/psi(0);
             dpsi = diff(psi);
             d2psi = diff(dpsi);
-            alpha = -d2psi(0)/psi(0)*rl^2/self.c_pswf^2/2;
+            alpha = -d2psi(0)*rl^2/self.c_pswf^2/2;
             k = sqrt(ksq);
             psi_arg = k*rl/self.c_pswf;
             gamma_hat = zeros(size(psi_arg));
             supp_mask = psi_arg <= 1; % Truncate to PSWF support
-            gamma_hat(supp_mask) = psi(psi_arg(supp_mask))/psi(0) .* (1 + alpha*ksq(supp_mask));
+            gamma_hat(supp_mask) = psi(psi_arg(supp_mask)) .* (1 + alpha*ksq(supp_mask));
         end
     end
 end

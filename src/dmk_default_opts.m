@@ -18,7 +18,8 @@ function dmk_opt = dmk_default_opts(args)
         p = p_list(idx);
         p_err = interp_err(idx);
         if isempty(idx)
-            error("Unable to find p satisfying tolerance")
+            error("Unable to find p satisfying tolerance=%g, lowest interp error was %g", ...
+                  tol, min(interp_err))
         end
         cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
     else
