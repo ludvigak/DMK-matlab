@@ -2,11 +2,14 @@
 clear
 
 clf
-tol = 1e-9;
+tol = 1e-6;
 show_split(@kernels.stokeslet_hasimoto, tol);
 show_split(@kernels.stokeslet_pswf, tol);
-show_split(@kernels.stokeslet_pswf_sq, tol);
-show_split(@kernels.stokeslet_exp4, tol);
+show_split(@kernels.stokeslet_pswf2, tol);
+show_split(@kernels.stokeslet_pswf3, tol);
+% These are clearly inferior in real space:
+%show_split(@kernels.stokeslet_pswf_sq, tol);
+%show_split(@kernels.stokeslet_exp4, tol);
 
 for p=1:2
     subplot(1,2,p)

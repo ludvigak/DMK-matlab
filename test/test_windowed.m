@@ -70,3 +70,17 @@ end
 function test_windowed_stokeslet_pswf(testCase)
     run_windowed_kernel(testCase, @kernels.stokeslet_pswf);
 end
+
+function test_windowed_stokeslet_pswf2(testCase)
+    run_windowed_kernel(testCase, @kernels.stokeslet_pswf2);
+end
+
+% Not passing
+% function test_windowed_stokeslet_pswf3(testCase)
+%     run_windowed_kernel(testCase, @kernels.stokeslet_pswf3);
+% end
+
+% Not passing
+% function test_windowed_stokeslet_pswf_sq(testCase)
+%     run_windowed_kernel(testCase, @kernels.stokeslet_pswf_sq);
+% end
