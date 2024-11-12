@@ -55,22 +55,44 @@ classdef StressletBase < kernels.SplitKernelInterface
         end
 
         function uhat = fourier_composition(fhat, k1, k2, k3, ksq)
-            kvec = {k1, k2, k3};
             N = size(fhat, 1);
             if ndims(fhat)==2 && all(size(fhat)==[N 9])
                 fhat = reshape(fhat, N, 3, 3);
             end
             assert(ndims(fhat)==3 && all(size(fhat)==[N 3 3]))
             uhat = zeros(N, 3, like=1+1i);
-            for l=1:3
-                for m=1:3
-                    for n=1:3
-                        uhat(:, l) = uhat(:, l) + 1i*( ...
-                            ksq.*(kvec{l}*(m==n) + kvec{m}*(n==l) + kvec{n}*(l==m)) + ...
-                            -2*kvec{l}.*kvec{m}.*kvec{n} ...
-                                                  ) .* fhat(:, m, n);
+
+            if false
+                % Explicit code:
+                kvec = {k1, k2, k3};
+                for l=1:3
+                    for m=1:3
+                        for n=1:3
+                            uhat(:, l) = uhat(:, l) + 1i*( ...
+                                ksq.*(kvec{l}*(m==n) + kvec{m}*(n==l) + kvec{n}*(l==m)) + ...
+                                -2*kvec{l}.*kvec{m}.*kvec{n} ...
+                                                         ) .* fhat(:, m, n);
+                        end
                     end
                 end
+            else
+                % Slightly operation-optimized code:
+                double_product = ...
+                    + k1.*k1.*fhat(:, 1, 1) ...
+                    + k1.*k2.*fhat(:, 1, 2) ...
+                    + k1.*k3.*fhat(:, 1, 3) ...
+                    + k2.*k1.*fhat(:, 2, 1) ...
+                    + k2.*k2.*fhat(:, 2, 2) ...
+                    + k2.*k3.*fhat(:, 2, 3) ...
+                    + k3.*k1.*fhat(:, 3, 1) ...
+                    + k3.*k2.*fhat(:, 3, 2) ...
+                    + k3.*k3.*fhat(:, 3, 3);
+                fhat_diag = fhat(:, 1, 1) + fhat(:, 2, 2) + fhat(:, 3, 3);
+                product_1 = fhat(:, :, 1).*k1 + fhat(:, :, 2).*k2 + fhat(:, :, 3).*k3;
+                product_2 = fhat(:, 1, :).*k1 + fhat(:, 2, :).*k2 + fhat(:, 3, :).*k3;
+                product_2 = squeeze(product_2);
+                products = product_1 + product_2;
+                uhat = 1i*([k1 k2 k3].*(ksq.*fhat_diag - 2*double_product) + ksq.*products);
             end
         end
 
