@@ -1,5 +1,7 @@
-function Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level)
+function Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level, kernel)
     Mout = cell(1, max_level+1);
+    Dlhat  = cell(1, max_level+1);
+    w      = cell(1, max_level+1);
     [rvec, ~] = approx.chebvander(p);
     for l=0:max_level
         rl = 1/2.^l;
@@ -7,6 +9,13 @@ function Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level)
         % Convert proxy charges to outgoing
         k = hl*(-nf:nf)';
         Mout{l+1} = exp(-1i*k.*rvec'/2*rl);
+        % Scale outgoing so that it becomes expansion of solution
+        [k1, k2, k3] = ndgrid(k, k, k);
+        % Dlhat is a closure that is applied to outgoing charges at runtime
+        % to account for vectors
+        Dlhat{l+1} = kernel.diffkernel_fourier(k1(:), k2(:), k3(:), l);
+        % w_l factor 
+        w{l+1} = 1/(2*pi)^3 * hl^3;
     end
     Nf = (2*nf+1)^3;
     function Phi = apply(proxy_charges, level)
@@ -15,6 +24,11 @@ function Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level)
         for d=1:dim
             Phi(:, d) = approx.kronmat_apply(Mout{level+1}, proxy_charges(:, d), 3);
         end
+        % Apply Fourier kernel, so that expansion is of solution
+        % IMPORTANT: This deviates from DMK paper formulation
+        wl = w{level+1}; % Fourier kernel scaling
+        op = Dlhat{level+1};
+        Phi = wl.*op(Phi);
     end
     Tprox2pw = @apply;
 end

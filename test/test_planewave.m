@@ -18,8 +18,8 @@ function run_planeswaves(testCase, kernel_ref)
     K0 = 2*kernel.Kmax;
     nf = ceil(K0/h0);
     dim = kernel.dim_in;
-    Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level);
-    Tpw2poly = operator_planewave2local(p, h0, nf, max_level, kernel);
+    Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level, kernel);
+    Tpw2poly = operator_planewave2local(p, h0, nf, max_level);
     Tpwshift = operator_planewave_shift(h0, nf);
     for l = 0:max_level
         rl = 1/2^l;
@@ -36,9 +36,9 @@ function run_planeswaves(testCase, kernel_ref)
         [m1, m2, m3] = ndgrid(-nf:nf, -nf:nf, -nf:nf);
         k1 = hl*m1(:);
         k2 = hl*m2(:);
-        k3 = hl*m3(:);    
+        k3 = hl*m3(:);
         D0hat = kernel.diffkernel_fourier(k1, k2, k3, l);
-        % w_l factor 
+        % w_l factor
         wl = 1/(2*pi)^3 * hl^3;
         % Source expansion
         kdoty = k1.*points(:, 1)' + k2.*points(:, 2)' + k3.*points(:, 3)';
@@ -60,7 +60,7 @@ function run_planeswaves(testCase, kernel_ref)
         % Convert to incoming (same box)
         Psi = Phi;
         % Compare to directly computed incoming
-        testCase.verifyLessThan(norm(wl.*D0hat(ghat)-wl.*D0hat(Psi), inf), tol);
+        testCase.verifyLessThan(norm(wl.*D0hat(ghat)-Psi, inf), tol);
         % Convert to local
         lambda = Tpw2poly(Psi, l);
         % Evaluate expansion at sample point
