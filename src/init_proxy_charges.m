@@ -1,9 +1,12 @@
-function proxy_charges = init_proxy_charges(tree, charges, p)
+function proxy_charges = init_proxy_charges(tree, charges, p, kernel)
 % DMK upward pass
     Tc2p = operator_child2parent(p);
     proxy_charges = cell(1, tree.numBoxes);
     % Allocate
     dim = size(charges, 2); % Data dimension
+    if isa(kernel, 'kernels.StressletBase')
+        dim = 9;
+    end
     for i=1:tree.numBoxes
         proxy_charges{i} = zeros(p^3, dim);
     end
@@ -15,6 +18,9 @@ function proxy_charges = init_proxy_charges(tree, charges, p)
         c = tree.box_center(leaf_idx);
         s = tree.box_size(leaf_idx);
         scaled_points = (box_points-c)*2./s;
+        if isa(kernel, 'kernels.StressletBase')
+            box_charges = kernel.input_product(box_charges);
+        end
         for d=1:dim
             % TODO: Would be more efficient to move this loop all the way into +approx
             proxy_charges{leaf_idx}(:, d) = points2proxy(scaled_points, box_charges(:, d), p);

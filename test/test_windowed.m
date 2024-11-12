@@ -24,13 +24,7 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     assert(all(abs(sum(charges, 1)) > 1e-3)); % Cannot have charge neutrality
     % Run upward pass and collect root proxy charges and points
     tree = octree(points, 1);
-    if isa(kernel, 'kernels.StressletBase')
-        % Stresslet
-        charges_prod = kernel.input_product(charges);
-        proxy_charges = init_proxy_charges(tree, charges_prod, p);
-    else
-        proxy_charges = init_proxy_charges(tree, charges, p);
-    end
+    proxy_charges = init_proxy_charges(tree, charges, p, kernel);
     [rvec, V] = approx.chebvander(p);
     box_proxy_points = tree.box_grid(1, rvec);
     box_proxy_charges = proxy_charges{1};

@@ -5,9 +5,9 @@ function u = dmk_apply(charges, dmk_state)
     p = dmk_state.opt.p;
     % Upward pass
     tic_up = tic();
-    proxy_charges = init_proxy_charges(tree, charges, p);
+    proxy_charges = init_proxy_charges(tree, charges, p, dmk_state.opt.kernel);
     t_up = toc(tic_up);
-    cprintf(opt, '[dmk_apply] upward pass:        %.3f\n', t_up);    
+    cprintf(opt, '[dmk_apply] upward pass:        %.3f\n', t_up);
     % Downward pass
     tic_down = tic();
     local_expansions = collect_local_expansions(tree, ...

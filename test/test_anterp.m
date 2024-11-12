@@ -12,7 +12,7 @@ function run_upward_pass(testCase, kernel)
     charges = rand(N, kernel.dim_in)-1/2;
     rvec = chebpts(p, 1);
     tree = octree(points, max_level);
-    proxy_charges = init_proxy_charges(tree, charges, p);
+    proxy_charges = init_proxy_charges(tree, charges, p, kernel);
     % For each box, check that proxy charges represent the field from
     % all points in box (including children), at a well-separated distance
     for box_idx=1:tree.numBoxes

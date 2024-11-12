@@ -60,7 +60,7 @@ classdef StressletBase < kernels.SplitKernelInterface
             if ndims(fhat)==2 && all(size(fhat)==[N 9])
                 fhat = reshape(fhat, N, 3, 3);
             end
-            assert(all(size(fhat)==[N 3 3]))
+            assert(ndims(fhat)==3 && all(size(fhat)==[N 3 3]))
             uhat = zeros(N, 3, like=1+1i);
             for l=1:3
                 for m=1:3
