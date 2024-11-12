@@ -73,6 +73,18 @@ classdef StressletBase < kernels.SplitKernelInterface
                 end
             end
         end
+
+        function fprod = input_product(f)
+            N = size(f, 1);
+            fprod = zeros(N, 3, 3);
+            for i1=1:3
+                for i2=1:3
+                    fprod(:, i1, i2) = f(:, i1) .* f(:,3+i2);
+                end
+            end
+            fprod = reshape(fprod, N, 9);
+        end
+
     end
 
     methods

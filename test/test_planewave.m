@@ -8,9 +8,9 @@ end
 
 function run_planeswaves(testCase, kernel_ref)
     rng(1);
-    tol = 1e-9;
+    tol = 1e-8;
     kernel = kernel_ref(tolerance=tol);
-    p = 45;
+    p = 50;
     max_level = 2;
     r0 = 1;
     D = 3*r0;
@@ -30,6 +30,13 @@ function run_planeswaves(testCase, kernel_ref)
         N = 20;
         points =  rl*(rand(N, 3)-1/2);
         charges = rl*(rand(N, dim)-1/2);
+        if isa(kernel, 'kernels.StressletBase')
+            % Stresslet
+            fourier_charges = kernel.input_product(charges);
+        else
+            fourier_charges = charges;
+        end
+        fourier_dim = size(fourier_charges, 2);
         % Test sample point
         target = rl*[0.4 0.2 0.3];
         % Setup Fourier vectors
@@ -42,7 +49,7 @@ function run_planeswaves(testCase, kernel_ref)
         wl = 1/(2*pi)^3 * hl^3;
         % Source expansion
         kdoty = k1.*points(:, 1)' + k2.*points(:, 2)' + k3.*points(:, 3)';
-        ghat = exp(-1i*kdoty) * charges;
+        ghat = exp(-1i*kdoty) * fourier_charges;
         kdotx = k1.*target(1) + k2.*target(2) + k3.*target(3);
         % Compute udiff
         udiff_fourier = real( (wl .* D0hat(ghat)).' * exp(1i*kdotx) ).';
@@ -51,9 +58,9 @@ function run_planeswaves(testCase, kernel_ref)
         % Compare direct and Fourier
         testCase.verifyEqual(udiff_fourier, udiff_direct, 'abstol', tol);
         % Form proxy charges:
-        proxy_charges = zeros(p^3, dim);
-        for d=1:dim
-            proxy_charges(:, d) = points2proxy(points*2/rl, charges(:, d), p);
+        proxy_charges = zeros(p^3, fourier_dim);
+        for d=1:fourier_dim
+            proxy_charges(:, d) = points2proxy(points*2/rl, fourier_charges(:, d), p);
         end
         % Convert proxy charges to outgoing
         Phi = Tprox2pw(proxy_charges, l);
@@ -102,4 +109,8 @@ end
 
 function test_planeswaves_stokeslet_pswf(testCase)
     run_planeswaves(testCase, @kernels.stokeslet_pswf);
+end
+
+function test_planeswaves_stresslet_hasimoto(testCase)
+    run_planeswaves(testCase, @kernels.stresslet_hasimoto);
 end

@@ -26,13 +26,7 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     tree = octree(points, 1);
     if isa(kernel, 'kernels.StressletBase')
         % Stresslet
-        charges_prod = zeros(N, 3, 3);
-        for i1=1:3
-            for i2=1:3
-                charges_prod(:, i1, i2) = charges(:, i1) .* charges(:,3+i2);
-            end
-        end
-        charges_prod = reshape(charges_prod, N, 9);
+        charges_prod = kernel.input_product(charges);
         proxy_charges = init_proxy_charges(tree, charges_prod, p);
     else
         proxy_charges = init_proxy_charges(tree, charges, p);
