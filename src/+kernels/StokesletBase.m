@@ -112,8 +112,12 @@ classdef StokesletBase < kernels.SplitKernelInterface
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
+            % Decay from Bagge & Tornberg
             Bwin = 8*pi./ksq.^2 .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
             Bwin(k==0) = pi*Ctrunc^4/15;
+            % Slower, from Vico et al
+            %Bwin = -4*pi./ksq.^2 .* ((2-Ctrunc^2*k.^2).*cos(Ctrunc*k) + 2*Ctrunc*k.*sin(Ctrunc*k) - 2);
+            %Bwin(k==0) = pi*Ctrunc^4;
             Bwin = Bwin .* self.fourier_scaling(ksq, 0);
             function [uhat, const]=apply(fhat)
             % const = constant term to be added to solution
@@ -124,6 +128,7 @@ classdef StokesletBase < kernels.SplitKernelInterface
                 uhat(:, 3) = Bwin .* (ksq.*fhat(:, 3) - k3.*kdotf);
                 % Adjust for B windowing used
                 const = fhat(ksq==0, :) * 2/Ctrunc;
+                %const = fhat(ksq==0, :) * 0;
             end
             W0hat_fun = @apply;
         end

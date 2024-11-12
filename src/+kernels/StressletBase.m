@@ -53,6 +53,26 @@ classdef StressletBase < kernels.SplitKernelInterface
                                sum(r3.*fact, 1)].'; % Ntrg x 3
             end
         end
+
+        function uhat = fourier_composition(fhat, k1, k2, k3, ksq)
+            kvec = {k1, k2, k3};
+            N = size(fhat, 1);
+            if ndims(fhat)==2 && all(size(fhat)==[N 9])
+                fhat = reshape(fhat, N, 3, 3);
+            end
+            assert(all(size(fhat)==[N 3 3]))
+            uhat = zeros(N, 3, like=1+1i);
+            for l=1:3
+                for m=1:3
+                    for n=1:3
+                        uhat(:, l) = uhat(:, l) + 1i*( ...
+                            ksq.*(kvec{l}*(m==n) + kvec{m}*(n==l) + kvec{n}*(l==m)) + ...
+                            -2*kvec{l}.*kvec{m}.*kvec{n} ...
+                                                  ) .* fhat(:, m, n);
+                    end
+                end
+            end
+        end
     end
 
     methods
@@ -109,9 +129,8 @@ classdef StressletBase < kernels.SplitKernelInterface
             B(ksq==0)=0;
             Nf = numel(k1);
             function uhat=apply(fhat)
-                assert(all(size(fhat)==[Nf 3]));
-                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
-                uhat = -B .* (ksq.*fhat - [k1 k2 k3].*kdotf);
+                assert(all(size(fhat)==[Nf 3 3]));
+                uhat = -B .* self.fourier_composition(fhat, k1, k2, k3, ksq);
                 % Note k==0 artificially set to zero
             end
             Mlhat_fun = @apply;
@@ -131,11 +150,7 @@ classdef StressletBase < kernels.SplitKernelInterface
             Bdiff = 8*pi./ksq.^2.*(Blp1 - Bl);
             Bdiff(ksq==0) = 0; % Difference kernel is zero at k=0
             function uhat=apply(fhat)
-                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
-                uhat = zeros(size(fhat), like=1+1i);
-                uhat(:, 1) = Bdiff .* (ksq.*fhat(:, 1) - k1.*kdotf);
-                uhat(:, 2) = Bdiff .* (ksq.*fhat(:, 2) - k2.*kdotf);
-                uhat(:, 3) = Bdiff .* (ksq.*fhat(:, 3) - k3.*kdotf);
+                uhat = Bdiff .* self.fourier_composition(fhat, k1, k2, k3, ksq);
             end
             Dlhat_fun = @apply;
         end
@@ -144,18 +159,19 @@ classdef StressletBase < kernels.SplitKernelInterface
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
+            % Windowed biharmonic (Bagge & Tornberg)
             Bwin = 8*pi./ksq.^2 .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
             Bwin(k==0) = pi*Ctrunc^4/15;
+            % Slower (Vico et al)
+            %Bwin = -4*pi./ksq.^2 .* ((2-Ctrunc^2*k.^2).*cos(Ctrunc*k) + 2*Ctrunc*k.*sin(Ctrunc*k) - 2)
+            %Bwin(k==0) = pi*Ctrunc^4;
             Bwin = Bwin .* self.fourier_scaling(ksq, 0);
             function [uhat, const]=apply(fhat)
             % const = constant term to be added to solution
-                kdotf = k1.*fhat(:, 1) + k2.*fhat(:, 2) + k3.*fhat(:, 3);
-                uhat = zeros(size(fhat), like=1+1i);
-                uhat(:, 1) = Bwin .* (ksq.*fhat(:, 1) - k1.*kdotf);
-                uhat(:, 2) = Bwin .* (ksq.*fhat(:, 2) - k2.*kdotf);
-                uhat(:, 3) = Bwin .* (ksq.*fhat(:, 3) - k3.*kdotf);
-                % Adjust for B windowing used
-                const = fhat(ksq==0, :) * 2/Ctrunc;
+                uhat = self.fourier_composition(fhat, k1, k2, k3, ksq);
+                uhat = Bwin.*uhat;
+                % No constant term needed for stresslet
+                const = 0;
             end
             W0hat_fun = @apply;
         end

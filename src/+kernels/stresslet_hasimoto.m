@@ -46,12 +46,13 @@ classdef stresslet_hasimoto < kernels.StressletBase
             r2 = r.^2;
             c = xi^2*r2;
             Roffd = (2/6)*( 3.0*erfc(xi*r) + 2.0*xi/sqrt(pi)*r.*(3.0+2.0*c).*exp(-c) );
-            Rdiag = 4/sqrt(pi)*xi^3.*exp(-c);
+            Rdiag = 4/sqrt(pi)*xi^3.*exp(-c).*r;
         end
 
         function uself = self_interaction(self, charges, level)
             sigma_l = self.sigma_level(level);
-            uself = 0; % TODO
+            Ncharge = size(charges, 1);
+            uself = zeros(Ncharge, 3); % TODO
         end
     end
 end

@@ -10,9 +10,9 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, kernel)
     W0hat = kernel.winkernel_fourier(k1, k2, k3, Ctrunc);
     w = hf^3 / (2*pi)^3;
     Nf = numel(k1);
-    dim_in  = kernel.dim_in;
     dim_out = kernel.dim_out;
-    function ufar_expa = apply(proxy_charges)
+    function [ufar_expa, uhat] = apply(proxy_charges)
+        dim_in = size(proxy_charges, 2);
         ghat = zeros(Nf, dim_in, like=1+1i);
         for d=1:dim_in
             ghat(:, d) = approx.kronmat_apply(kdotr, proxy_charges(:, d), 3);

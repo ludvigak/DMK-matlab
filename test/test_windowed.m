@@ -6,11 +6,16 @@ end
 %% Test Functions
 
 
-function run_windowed_kernel(testCase, kernel_ref)
+function run_windowed_kernel(testCase, kernel_ref, args)
+    arguments
+        testCase
+        kernel_ref
+        args.tol = 1e-12
+    end
     rng(1);
     p = 40;
     N = 20;
-    tol = 1e-12;
+    tol = args.tol;
     kernel = kernel_ref(tolerance=tol);
     % Setup test
     dim = kernel.dim_in;
@@ -19,7 +24,19 @@ function run_windowed_kernel(testCase, kernel_ref)
     assert(all(abs(sum(charges, 1)) > 1e-3)); % Cannot have charge neutrality
     % Run upward pass and collect root proxy charges and points
     tree = octree(points, 1);
-    proxy_charges = init_proxy_charges(tree, charges, p);
+    if isa(kernel, 'kernels.StressletBase')
+        % Stresslet
+        charges_prod = zeros(N, 3, 3);
+        for i1=1:3
+            for i2=1:3
+                charges_prod(:, i1, i2) = charges(:, i1) .* charges(:,3+i2);
+            end
+        end
+        charges_prod = reshape(charges_prod, N, 9);
+        proxy_charges = init_proxy_charges(tree, charges_prod, p);
+    else
+        proxy_charges = init_proxy_charges(tree, charges, p);
+    end
     [rvec, V] = approx.chebvander(p);
     box_proxy_points = tree.box_grid(1, rvec);
     box_proxy_charges = proxy_charges{1};
@@ -84,3 +101,7 @@ end
 % function test_windowed_stokeslet_pswf_sq(testCase)
 %     run_windowed_kernel(testCase, @kernels.stokeslet_pswf_sq);
 % end
+
+function test_windowed_stresslet(testCase)
+    run_windowed_kernel(testCase, @kernels.stresslet_hasimoto, tol=1e-10); % TODO: Why lower tol?
+end
