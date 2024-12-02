@@ -33,7 +33,8 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
                         break
                     end
                 end
-                obj.c_pswf = c_pswf + 5; % Heuristic
+                obj.c_pswf = c_pswf + 7; % Heuristic (probably too much, but needed for tests)
+                                         % c_pswf + 5 is enough to get interpolation working
                 fprintf('[stresslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
             % Init PSWF

@@ -15,3 +15,4 @@ toc
 fprintf('\n')
 results.assertSuccess();
 disp('All tests passed!')
+thumbsup()

@@ -46,7 +46,7 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     field_direct = kernel.direct(targets, points, charges) - ...
         kernel.reskernel(targets, points, charges, 0);
     % Compare
-    Emax = norm(field_direct - field_fourier, inf);
+    Emax = norm(field_direct - field_fourier, inf) / norm(field_direct, inf);
     testCase.verifyLessThan(Emax, tol);
     % Self interaction at one proxy point
     single_charge = box_proxy_charges;
@@ -80,16 +80,18 @@ function test_windowed_stokeslet_pswf2(testCase)
     run_windowed_kernel(testCase, @kernels.stokeslet_pswf2);
 end
 
-% Not passing
-% function test_windowed_stokeslet_pswf3(testCase)
-%     run_windowed_kernel(testCase, @kernels.stokeslet_pswf3);
-% end
+function test_windowed_stokeslet_pswf3(testCase)
+    run_windowed_kernel(testCase, @kernels.stokeslet_pswf3, tol=1e-11);
+end
 
-% Not passing
-% function test_windowed_stokeslet_pswf_sq(testCase)
-%     run_windowed_kernel(testCase, @kernels.stokeslet_pswf_sq);
-% end
+function test_windowed_stokeslet_pswf_sq(testCase)
+    run_windowed_kernel(testCase, @kernels.stokeslet_pswf_sq, tol=1e-7);
+end
 
 function test_windowed_stresslet(testCase)
-    run_windowed_kernel(testCase, @kernels.stresslet_hasimoto, tol=1e-10); % TODO: Why lower tol?
+    run_windowed_kernel(testCase, @kernels.stresslet_hasimoto);
+end
+
+function test_windowed_stresslet_pswf(testCase)
+    run_windowed_kernel(testCase, @kernels.stresslet_pswf, tol=1e-11); % TODO: Why lower tol?
 end

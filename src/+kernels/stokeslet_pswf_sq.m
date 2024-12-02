@@ -35,7 +35,7 @@ classdef stokeslet_pswf_sq < kernels.StokesletFourierSplit
                         break
                     end
                 end
-                obj.c_pswf = c_pswf*2; % Heuristic for k^2
+                obj.c_pswf = c_pswf*2+2; % Heuristic for k^2
                 fprintf('[stokeslet_pswf_sq] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
             % Init PSWF

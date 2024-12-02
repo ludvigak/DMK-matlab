@@ -83,3 +83,19 @@ function test_point2point_stresslet(testCase)
     max_rel_err = norm(u_ref(:) - u_dmk(:), inf) / norm(u_ref(:), inf);
     testCase.verifyLessThan(max_rel_err, tol);
 end
+
+function test_point2point_stresslet_pswf(testCase)
+% Test complete point to point sum
+    rng(1);
+    tol = 1e-9;
+    N = 1e3;
+    max_level = 1;
+    points = rand(N, 3)-1/2;
+    charges = rand(N, 6)-1/2;
+    dmk_opt   = dmk_default_opts(tolerance=tol, kernel=@kernels.stresslet_pswf);
+    dmk_state = dmk_init(points, max_level, dmk_opt);
+    u_dmk     = dmk_apply(charges, dmk_state);
+    u_ref = dmk_opt.kernel.direct(points, points, charges);
+    max_rel_err = norm(u_ref(:) - u_dmk(:), inf) / norm(u_ref(:), inf);
+    testCase.verifyLessThan(max_rel_err, tol);
+end

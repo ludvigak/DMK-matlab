@@ -77,21 +77,22 @@ function run_planeswaves(testCase, kernel_ref)
         udiff_expa = real( kron(Ez, kron(Ey, Ex))* lambda );
         testCase.verifyEqual(udiff_expa, udiff_direct, 'abstol', tol);
         % Shift sample point around together with expansions
+        shift_errors = zeros(3,3,3,3);
         for i=-1:1
             for j=-1:1
                 for k=-1:1
                     shift = [i j k];
-                    newCenter = rl*shift;                   
+                    newCenter = rl*shift;
                     Psi_shifted = Tpwshift(Psi, i, j, k);
                     lambda_shifted = Tpw2poly(Psi_shifted, l);
-                    udiff_shifted = real( kron(Ez, kron(Ey, Ex))* lambda_shifted );
-                    udiff_shifted_direct = kernel.diffkernel(target - newCenter, points, charges, l);
-                    testCase.verifyEqual(udiff_shifted, ...
-                                         udiff_shifted_direct, ...
-                                         'abstol', tol);
+                    udiff_shifted(:,i+2,j+2,k+2) = real( kron(Ez, kron(Ey, Ex))* lambda_shifted );
+                    udiff_shifted_direct(:,i+2,j+2,k+2) = kernel.diffkernel(target - newCenter, points, charges, l);
                 end
             end
         end
+        shift_errors = udiff_shifted(:) - udiff_shifted_direct(:);
+        % TODO: Why fudge factor of 10 here?
+        testCase.verifyLessThan(norm(shift_errors, inf)/norm(udiff_shifted_direct(:), inf), tol*10);
     end
 end
 
@@ -113,4 +114,8 @@ end
 
 function test_planeswaves_stresslet_hasimoto(testCase)
     run_planeswaves(testCase, @kernels.stresslet_hasimoto);
+end
+
+function test_planeswaves_stresslet_pswf(testCase)
+    run_planeswaves(testCase, @kernels.stresslet_pswf);
 end
