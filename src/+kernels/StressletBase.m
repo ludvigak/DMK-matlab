@@ -125,6 +125,7 @@ classdef StressletBase < kernels.SplitKernelInterface
             self_mask = (r==0);
             rinv = 1./r;
             rinv(self_mask) = 0;
+            rinv3 = rinv.^3;
             rinv5 = rinv.^5;
             % Source vectors are Nsrc x 1
             q1 = f(:, 1);
@@ -138,7 +139,7 @@ classdef StressletBase < kernels.SplitKernelInterface
             qdotn = n1.*q1 + n2.*q2  + n3.*q3; % Nsrc x 1
             [Rdiag, Roffd] = self.real_decay(r, level);
             % Diagonal term
-            diag_fact  = Rdiag.*rinv; % common factor
+            diag_fact  = Rdiag.*rinv3; % common factor
             udiag = [ sum( (r1.*qdotn + q1.*rdotn + n1.*rdotq).*diag_fact, 1)    % 1 x Ntrg
                       sum( (r2.*qdotn + q2.*rdotn + n2.*rdotq).*diag_fact, 1)
                       sum( (r3.*qdotn + q3.*rdotn + n3.*rdotq).*diag_fact, 1) ]; % 3 x Ntrg

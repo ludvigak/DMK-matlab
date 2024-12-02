@@ -3,10 +3,12 @@ clear; rng(1);
 %kernel = @kernels.laplace_ewald;
 %kernel = @kernels.laplace_pswf;
 %kernel = @kernels.stokeslet_hasimoto;
+%kernel = @kernels.stokeslet_pswf;
 %kernel = @kernels.stokeslet_pswf2;
-kernel = @kernels.stresslet_hasimoto;
+%kernel = @kernels.stresslet_hasimoto;
+kernel = @kernels.stresslet_pswf;
 
-tol = 1e-10;
+tol = 1e-12;
 N = 2000;
 max_level = 1;
 
