@@ -36,8 +36,8 @@ classdef StokesletFourierSplit < kernels.StokesletBase
             hk = k(2)-k(1);
             R = sqrt(3)+1;
             % Explicitly duplicate the windowing here, since corrections needed
-            Bwin = 8*pi*((1 + 1/2*cos(R*k) - 3/2*sin(R*k)./(R*k)))./k.^4;
-            Bwin(k==0) = pi*R^4/15;
+            Bwin = -8*pi*((1 + 1/2*cos(R*k) - 3/2*sin(R*k)./(R*k)))./k.^4;
+            Bwin(k==0) = -pi*R^4/15;
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
             % Setup the integrands that correspond to the radial Fourier transforms,
@@ -58,9 +58,9 @@ classdef StokesletFourierSplit < kernels.StokesletBase
                 end
             end
             % Fourier integrals for evaluating mollified biharmonic
-            %Bmoll   = @(r) -4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            dBmoll  = @(r) -4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            d2Bmoll = @(r) -4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            %Bmoll   = @(r) 4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             %  Residual biharmonic, including corrections
             %Bres   = @(r) r - r.^2/2/R - R/2 - Bmoll(r);
             dBres  = @(r) 1 - r/R - dBmoll(r);
@@ -69,9 +69,9 @@ classdef StokesletFourierSplit < kernels.StokesletBase
             Rdiag_cheb = chebfun(@(r)  r .* d2Bres(r) + dBres(r), [0 rl]);
             Roffd_cheb = chebfun(@(r) -r .* d2Bres(r) + dBres(r), [0 rl]);
             % Self interaction
-            yself = -(2*k.^4)/3; % Limit d2f(r)-df(r)/r as r->0;
-            c_self = -4*pi*hk*sum( yself .* Bmollhat, 1) / (2*pi)^3 + 2/R;
-        end        
-    end    
+            yself = -(2*k.^4)/3; % Limit df(r)/r+d2f(r) as r->0;
+            c_self = 4*pi*hk*sum( yself .* Bmollhat, 1) / (2*pi)^3 + 2/R;
+        end
+    end
 end
 

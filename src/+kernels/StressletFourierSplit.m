@@ -38,8 +38,8 @@ classdef StressletFourierSplit < kernels.StressletBase
             hk = k(2)-k(1);
             R = sqrt(3)+1;
             % Explicitly duplicate the windowing here, since corrections needed
-            Bwin = 8*pi*((1 + 1/2*cos(R*k) - 3/2*sin(R*k)./(R*k)))./k.^4;
-            Bwin(k==0) = pi*R^4/15;
+            Bwin = -8*pi*((1 + 1/2*cos(R*k) - 3/2*sin(R*k)./(R*k)))./k.^4;
+            Bwin(k==0) = -pi*R^4/15;
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
             % Setup the integrands that correspond to the radial Fourier transforms,
@@ -75,9 +75,9 @@ classdef StressletFourierSplit < kernels.StressletBase
             end
             % Fourier integrals for evaluating mollified biharmonic
             %Bmoll   = @(r) -4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            dBmoll  = @(r) -4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            d2Bmoll = @(r) -4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            d3Bmoll = @(r) -4*pi*hk*sum(d3f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+            d3Bmoll = @(r) 4*pi*hk*sum(d3f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             %  Residual biharmonic, including corrections
             %Bres   = @(r) r - r.^2/2/R - R/2 - Bmoll(r);
             dBres  = @(r) 1 - r/R - dBmoll(r);
