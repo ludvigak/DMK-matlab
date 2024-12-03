@@ -37,9 +37,7 @@ classdef StressletFourierSplit < kernels.StressletBase
             k = linspace(0, self.Kmax/rl, Nk).';
             hk = k(2)-k(1);
             R = sqrt(3)+1;
-            % Explicitly duplicate the windowing here, since corrections needed
-            Bwin = -8*pi*((1 + 1/2*cos(R*k) - 3/2*sin(R*k)./(R*k)))./k.^4;
-            Bwin(k==0) = -pi*R^4/15;
+            [Bwin, alpha, beta] = windowed_biharmonic(k, R);
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
             % Setup the integrands that correspond to the radial Fourier transforms,
@@ -79,9 +77,9 @@ classdef StressletFourierSplit < kernels.StressletBase
             d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             d3Bmoll = @(r) 4*pi*hk*sum(d3f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             %  Residual biharmonic, including corrections
-            %Bres   = @(r) r - r.^2/2/R - R/2 - Bmoll(r);
-            dBres  = @(r) 1 - r/R - dBmoll(r);
-            d2Bres = @(r) - 1/R - d2Bmoll(r);
+            %Bres   = @(r) r + alpha + beta*r.^2 - Bmoll(r);
+            dBres  = @(r) 1 + 2*beta*r - dBmoll(r);
+            d2Bres = @(r) 2*beta - d2Bmoll(r);
             d3Bres = @(r) - d3Bmoll(r);
             % Construct chebfuns of diagonal and offdiagonal
             Rdiag_cheb = chebfun(@(r) r.^2.*d3Bres(r), [0 rl]);

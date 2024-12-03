@@ -194,13 +194,8 @@ classdef StressletBase < kernels.SplitKernelInterface
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
-            % Windowed biharmonic (Bagge & Tornberg)
-            Bwin = 8*pi./ksq.^2 .* (1 + 1/2*cos(Ctrunc*k) - 3/2*sin(Ctrunc*k)./(Ctrunc*k));
-            Bwin(k==0) = pi*Ctrunc^4/15;
-            % Slower (Vico et al)
-            %Bwin = -4*pi./ksq.^2 .* ((2-Ctrunc^2*k.^2).*cos(Ctrunc*k) + 2*Ctrunc*k.*sin(Ctrunc*k) - 2)
-            %Bwin(k==0) = pi*Ctrunc^4;
-            Bwin = Bwin .* self.fourier_scaling(ksq, 0);
+            Bwin = windowed_biharmonic(k, Ctrunc);
+            Bwin = -Bwin .* self.fourier_scaling(ksq, 0);
             function [uhat, const]=apply(fhat)
             % const = constant term to be added to solution
                 uhat = self.fourier_composition(fhat, k1, k2, k3, ksq);
