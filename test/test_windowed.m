@@ -95,3 +95,7 @@ end
 function test_windowed_stresslet_pswf(testCase)
     run_windowed_kernel(testCase, @kernels.stresslet_pswf, tol=1e-11); % TODO: Why lower tol?
 end
+
+function test_windowed_rotlet(testCase)
+    run_windowed_kernel(testCase, @kernels.rotlet_ewald);
+end

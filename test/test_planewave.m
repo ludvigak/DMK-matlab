@@ -119,3 +119,7 @@ end
 function test_planeswaves_stresslet_pswf(testCase)
     run_planeswaves(testCase, @kernels.stresslet_pswf);
 end
+
+function test_planeswaves_rotlet(testCase)
+    run_planeswaves(testCase, @kernels.rotlet_ewald);
+end

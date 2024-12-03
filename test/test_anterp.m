@@ -5,6 +5,7 @@ end
 
 %% Test Functions
 function run_upward_pass(testCase, kernel)
+    rng(1);
     N = 64;
     p = 32;
     max_level = 1;
@@ -36,4 +37,8 @@ end
 
 function test_upward_pass_stokeslet(testCase)
     run_upward_pass(testCase, kernels.stokeslet_hasimoto(tolerance=1e-10));
+end
+
+function test_upward_pass_rotlet(testCase)
+    run_upward_pass(testCase, kernels.rotlet_ewald(tolerance=1e-10));
 end

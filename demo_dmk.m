@@ -6,13 +6,14 @@ clear; rng(1);
 %kernel = @kernels.stokeslet_pswf;
 %kernel = @kernels.stokeslet_pswf2;
 %kernel = @kernels.stresslet_hasimoto;
-kernel = @kernels.stresslet_pswf;
+%kernel = @kernels.stresslet_pswf;
+kernel = @kernels.rotlet_ewald;
 
-tol = 1e-12;
+tol = 1e-10;
 N = 2000;
 max_level = 1;
 
-dmk_opt   = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel);
+dmk_opt = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel);
 
 points = rand(N, 3)-1/2;
 charges = rand(N, dmk_opt.kernel.dim_in)-1/2;
@@ -30,6 +31,3 @@ if N <= 1e5
     toc(atic)
     max_rel_err = norm(u_ref(:) - u_dmk(:), inf) / norm(u_ref(:), inf)
 end
-
-
-
