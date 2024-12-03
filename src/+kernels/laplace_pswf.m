@@ -143,8 +143,8 @@ classdef laplace_pswf < kernels.SplitKernelInterface
         % Fourier transform of  windowed mollified Laplace kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
-            W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* self.psi(k/self.c_pswf)/self.psi(0);
-            W0hat(ksq==0) = 8*pi * Ctrunc^2/4;
+            Hwin = windowed_harmonic(k, Ctrunc);
+            W0hat = Hwin .* self.psi(k/self.c_pswf)/self.psi(0);
             function [uhat, const] = apply(fhat)
                 const = 0;
                 uhat = W0hat .* fhat;

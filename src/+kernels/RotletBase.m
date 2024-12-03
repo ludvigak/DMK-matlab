@@ -106,12 +106,12 @@ classdef RotletBase < kernels.SplitKernelInterface
 
         function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, level)
             ksq = k1.^2 + k2.^2 + k3.^2;
-            B = 4*pi./ksq.*self.fourier_scaling(ksq, level);
-            B(ksq==0)=0;
+            H = 4*pi./ksq.*self.fourier_scaling(ksq, level);
+            H(ksq==0)=0;
             Nf = numel(k1);
             function uhat=apply(fhat)
                 assert(all(size(fhat)==[Nf 3]));
-                uhat = -1i * B .* self.fourier_composition(fhat, k1, k2, k3);
+                uhat = -1i * H .* self.fourier_composition(fhat, k1, k2, k3);
                 % Note k==0 artificially set to zero
             end
             Mlhat_fun = @apply;
@@ -126,12 +126,12 @@ classdef RotletBase < kernels.SplitKernelInterface
         function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, level)
         % Fourier transform of difference kernel
             ksq = k1.^2 + k2.^2 + k3.^2;
-            Bl = self.fourier_scaling(ksq, level);
-            Blp1 = self.fourier_scaling(ksq, level+1);
-            Bdiff = 4*pi./ksq.*(Blp1 - Bl);
-            Bdiff(ksq==0) = 0; % Difference kernel is zero at k=0
+            Hl = self.fourier_scaling(ksq, level);
+            Hlp1 = self.fourier_scaling(ksq, level+1);
+            Hdiff = 4*pi./ksq.*(Hlp1 - Hl);
+            Hdiff(ksq==0) = 0; % Difference kernel is zero at k=0
             function uhat=apply(fhat)
-                uhat = -1i * Bdiff .* self.fourier_composition(fhat, k1, k2, k3);
+                uhat = -1i * Hdiff .* self.fourier_composition(fhat, k1, k2, k3);
             end
             Dlhat_fun = @apply;
         end
@@ -140,8 +140,8 @@ classdef RotletBase < kernels.SplitKernelInterface
         % Fourier transform of windowed mollified kernel (i.e. far field)
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
-            W0hat = 8*pi*(sin(Ctrunc*k/2)./k).^2 .* self.fourier_scaling(ksq, 0);
-            W0hat(ksq==0) = 8*pi * Ctrunc^2/4;
+            Hwin = windowed_harmonic(k, Ctrunc);
+            W0hat = Hwin .* self.fourier_scaling(ksq, 0);
             function [uhat, const]=apply(fhat)
                 const = 0;
                 uhat = -1i * W0hat .* self.fourier_composition(fhat, k1, k2, k3);
