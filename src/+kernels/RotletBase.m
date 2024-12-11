@@ -5,8 +5,8 @@ classdef RotletBase < kernels.SplitKernelInterface
     methods (Abstract)
         fourier_decay = fourier_scaling(self, ksq, level)
         % Fourier scaling, corresponding to Fourier transform of screening function
-        [Rdiag, Roffd] = real_decay(self, r, level)
-        % Diagonal and offdiagonal decay of residual rotlet, scaled by r
+        R = real_decay(self, r, level)
+        % Central decay of residual rotlet
     end
 
     properties (Constant)
@@ -53,10 +53,10 @@ classdef RotletBase < kernels.SplitKernelInterface
         end
 
         function uhat = fourier_composition(fhat, k1, k2, k3)
+        % Evaluates cross product (f x k)
             f1 = fhat(:, 1);
             f2 = fhat(:, 2);
             f3 = fhat(:, 3);
-            % Cross product
             c1 = (f2.*k3 - f3.*k2);
             c2 = (f3.*k1 - f1.*k3);
             c3 = (f1.*k2 - f2.*k1);

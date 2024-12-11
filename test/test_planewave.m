@@ -123,3 +123,7 @@ end
 function test_planeswaves_rotlet(testCase)
     run_planeswaves(testCase, @kernels.rotlet_ewald);
 end
+
+function test_planeswaves_rotlet_pswf(testCase)
+    run_planeswaves(testCase, @kernels.rotlet_pswf);
+end

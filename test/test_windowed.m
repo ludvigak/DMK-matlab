@@ -99,3 +99,7 @@ end
 function test_windowed_rotlet(testCase)
     run_windowed_kernel(testCase, @kernels.rotlet_ewald);
 end
+
+function test_windowed_rotlet_pswf(testCase)
+    run_windowed_kernel(testCase, @kernels.rotlet_pswf);
+end
