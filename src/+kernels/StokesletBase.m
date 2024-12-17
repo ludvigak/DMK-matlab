@@ -13,9 +13,7 @@ classdef StokesletBase < kernels.SplitKernelInterface
         function u = direct(targets, sources, f)
         % Stokeslet kernel S(r)
             assert(size(sources, 2)==3)
-            if size(targets, 1) ~= 3
-                targets = targets.';
-            end
+            targets = targets.';
             assert(size(targets, 1)==3);
             Ntrg = size(targets, 2);
             u = zeros(Ntrg, 3);
@@ -45,9 +43,7 @@ classdef StokesletBase < kernels.SplitKernelInterface
         function ures = reskernel(self, targets, sources, f, level)
         % Stokes residual kernel R_l(r)
             assert(size(sources, 2)==3)
-            if size(targets, 1) ~= 3
-                targets = targets.';
-            end
+            targets = targets.';
             assert(size(targets, 1)==3);
             r1 = targets(1, :)-sources(:, 1);
             r2 = targets(2, :)-sources(:, 2);

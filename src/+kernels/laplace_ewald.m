@@ -40,9 +40,7 @@ classdef laplace_ewald < kernels.SplitKernelInterface
             N = numel(charges);
             assert(size(points, 1)==N)
             assert(size(points, 2)==3)
-            if size(targets, 1) ~= 3
-                targets = targets.';
-            end
+            targets = targets.';
             assert(size(targets, 1)==3);
             u = zeros(size(targets, 2), 1);
             batch_size = 64;
@@ -64,9 +62,7 @@ classdef laplace_ewald < kernels.SplitKernelInterface
         function ures = reskernel(self, targets, points, charges, level)
         % Laplace residual kernel R_l(r)
             sigma_l = self.sigma_level(level);
-            if size(targets, 1) ~= 3
-                targets = targets.';
-            end
+            targets = targets.';
             assert(size(targets, 1)==3);
             r = sqrt( (points(:, 1)-targets(1, :)).^2 + ...
                       (points(:, 2)-targets(2, :)).^2 + ...
@@ -79,9 +75,7 @@ classdef laplace_ewald < kernels.SplitKernelInterface
         function udiff = diffkernel(self, targets, points, charges, level)
         % Laplace difference kernel D_l(r)
             sigma_l = self.sigma_level(level);
-            if size(targets, 1) ~= 3
-                targets = targets.';
-            end
+            targets = targets.';
             assert(size(targets, 1)==3);
             sigma_lp1 = sigma_l/2; % sigma_{l+1} = sigma_l / 2
             r = sqrt( (points(:, 1)-targets(1, :)).^2 + ...
