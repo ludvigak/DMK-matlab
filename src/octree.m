@@ -18,7 +18,7 @@ classdef octree < handle
 
     methods
         function tree = octree(points, maxLevel)
-        % Points are Nx3 in [-1, 1]^3
+        % Points are Nx3 in [-1/2, 1/2]^3
             tree.N = size(points, 1);
             tree.maxLevel = maxLevel;
             tree.points = points;
@@ -87,22 +87,28 @@ classdef octree < handle
         end
 
         function create_colleague_lists(tree)
-            centers = tree.box_center(1:tree.numBoxes);
             tree.boxColleagues = cell(1, tree.numBoxes);
-            for l=0:tree.maxLevel
+            tree.boxColleagues{1} = 1;
+            for l=1:tree.maxLevel
                 rl = 1/2^l;
-                level_mask = (tree.boxLevels == l);
-                level_centers = centers(level_mask, :);
-                level_boxes = find(level_mask);
-                idx = knnsearch(level_centers, level_centers, 'K', 27);
-                idx = level_boxes(idx);
+                level_boxes = find(tree.boxLevels == l);
                 for i=1:numel(level_boxes)
                     box = level_boxes(i);
-                    nearest = idx(i, :);
-                    dist = max(abs( tree.box_center(box) - tree.box_center(nearest)),...
+                    parent = tree.boxParents(box);
+                    parentColleagues = tree.boxColleagues{parent};
+                    possible_colleagues = zeros(1, 2+9*numel(parentColleagues));
+                    n = 0;
+                    for pc = parentColleagues
+                        pc_children = reshape(tree.boxChildren{pc}, 1, []);
+                        m = numel(pc_children);
+                        possible_colleagues(n+1:n+m) = pc_children;
+                        n = n+m;
+                    end
+                    possible_colleagues = possible_colleagues(1:n);
+                    dist = max(abs( tree.box_center(box) - tree.box_center(possible_colleagues)),...
                                [], 2);
-                    nearest = nearest(dist < rl*1.000001);
-                    tree.boxColleagues{box} = nearest;
+                    % Colleague center-to-center is within r_l + safety factor
+                    tree.boxColleagues{box} = possible_colleagues(dist < rl*1.000001);
                 end
             end
         end
