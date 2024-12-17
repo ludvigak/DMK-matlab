@@ -9,7 +9,7 @@ classdef rotlet_pswf < kernels.RotletBase
         sigma_0
         c_pswf
         pswf_cheb
-        pswf_c0
+        pswf_lambda
         pswf_erfc_cheb
     end
 
@@ -39,9 +39,13 @@ classdef rotlet_pswf < kernels.RotletBase
             end
             % Init PSWF
             obj.Kmax = obj.c_pswf;
-            obj.pswf_cheb = pswf(0, obj.c_pswf);
-            obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
-            pswf_erfc = @(z) integral(obj.pswf_cheb, z, 1) / obj.pswf_c0;
+            psi = pswf(0, obj.c_pswf);
+            psi = psi / integral(psi, 0, 1); % Normalize
+            obj.pswf_cheb = psi;
+            obj.pswf_lambda = 2/psi(0);
+            %obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
+            %obj.pswf_cheb = obj.pswf_cheb / obj.pswf_c0;
+            pswf_erfc = @(z) integral(obj.pswf_cheb, z, 1);
             obj.pswf_erfc_cheb = chebfun(pswf_erfc, [0 1]);
         end
 
@@ -60,15 +64,16 @@ classdef rotlet_pswf < kernels.RotletBase
     end
 
     methods
-        function B = fourier_scaling(self, ksq, level)
+        function H = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
             kabs = sqrt(ksq);
-            B = self.psi(kabs*rl/self.c_pswf)/self.psi(0);
+            psi_hat = self.pswf_lambda * self.psi(kabs*rl/self.c_pswf);
+            H = psi_hat/2;
         end
 
         function R = real_decay(self, r, level)
             rl = 1/2^level;
-            R =  r.*self.psi(r/rl)/(rl*self.pswf_c0) + self.pswf_erfc(r/rl);
+            R =  -(r.*self.psi(r/rl)/rl + self.pswf_erfc(r/rl));
         end
 
         function uself = self_interaction(self, charges, level)

@@ -42,7 +42,7 @@ classdef rotlet_ewald < kernels.RotletBase
         function R = real_decay(self, r, level)
             sigma_l = self.sigma_level(level);
             xi = 1/sigma_l;
-            R = 2*xi/sqrt(pi)*exp(-xi^2*r.^2).*r + erfc(xi*r);
+            R = -(2*xi/sqrt(pi)*exp(-xi^2*r.^2).*r + erfc(xi*r));
         end
 
         function uself = self_interaction(self, charges, level)
