@@ -1,6 +1,8 @@
 classdef StressletBase < kernels.SplitKernelInterface
 % Base class for Stresslet splits, contains everything that is not split-specific
 % Input f is packed as [q1 q2 q3 n1 n2 n3]
+%
+% TODO: Need to implement k=0 term for periodic stresslet
 
 % Interface functions to be defined in subclass
     methods (Abstract)        
