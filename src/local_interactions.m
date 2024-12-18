@@ -19,10 +19,13 @@ function u=local_interactions(tree, charges, kernel)
         idxs = tree.box_point_idxs(leaf_idx);
         box_points = tree.points(idxs, :);
         clist = tree.boxColleagues{leaf_idx};
+        slist = tree.boxColleagueShifts{leaf_idx};
         ubox = zeros(numel(idxs), kernel.dim_out);
-        for coll=clist
+        for cidx=1:numel(clist)
+            coll = clist(cidx);
+            coll_shift = slist(cidx, :);
             coll_idxs = tree.box_point_idxs(coll);
-            coll_points = tree.points(coll_idxs, :);
+            coll_points = tree.points(coll_idxs, :) + coll_shift;
             coll_charges = charges(coll_idxs, :);
             ubox = ubox + kernel.reskernel(box_points, coll_points, coll_charges, l);
         end

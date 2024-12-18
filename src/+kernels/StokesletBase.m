@@ -80,7 +80,7 @@ classdef StokesletBase < kernels.SplitKernelInterface
             end
             Mlhat_fun = @apply;
         end
-        
+
         function udiff = diffkernel(self, targets, sources, f, level)
         % Difference kernel D_l(r) = M_{l+1}(r) - M_l(r)
             udiff = mollkernel(self, targets, sources, f, level+1) - ...

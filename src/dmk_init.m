@@ -6,12 +6,16 @@ function dmk_state = dmk_init(points, max_level, dmk_opt)
     nf = dmk_opt.nf;
     % Build tree
     atic = tic();
-    dmk_state.tree = octree(points, max_level);
+    dmk_state.tree = octree(points, max_level, periodic=dmk_opt.periodic);
     t_tree = toc(atic);
     % Precompute operators
     atic = tic();
-    dmk_state.Twin = operator_windowed(p, dmk_opt.hf_win, dmk_opt.nf_win, ...
-                                       dmk_opt.Ctrunc, dmk_opt.kernel);
+    if dmk_opt.periodic
+        dmk_state.Troot = operator_periodic(p, dmk_opt.nf_per, dmk_opt.kernel);
+    else
+        dmk_state.Troot = operator_windowed(p, dmk_opt.hf_win, dmk_opt.nf_win, ...
+                                           dmk_opt.Ctrunc, dmk_opt.kernel);
+    end
     dmk_state.Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level, dmk_opt.kernel);
     dmk_state.Tpw2poly = operator_planewave2local(p, h0, nf, max_level);
     dmk_state.Tpwshift = operator_planewave_shift(h0, nf);
@@ -21,4 +25,3 @@ function dmk_state = dmk_init(points, max_level, dmk_opt)
     cprintf(dmk_opt, '[dmk_init] build tree:           %.3f s\n', t_tree);
     cprintf(dmk_opt, '[dmk_init] precompute operators: %.3f s\n', t_ops);
 end
-

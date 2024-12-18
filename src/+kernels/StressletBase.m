@@ -160,7 +160,6 @@ classdef StressletBase < kernels.SplitKernelInterface
             B(ksq==0)=0;
             Nf = numel(k1);
             function uhat=apply(fhat)
-                assert(all(size(fhat)==[Nf 3 3]));
                 uhat = -B .* self.fourier_composition(fhat, k1, k2, k3, ksq);
                 % Note k==0 artificially set to zero
             end

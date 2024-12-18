@@ -1,12 +1,12 @@
 function local_expansions = collect_local_expansions(tree, proxy_charges, ...
-                                                     Twin, Tprox2pw, Tpw2poly, Tpwshift, Tp2c ...
+                                                     Troot, Tprox2pw, Tpw2poly, Tpwshift, Tp2c ...
                                                     )
 % DMK downward pass
     outgoing_expansions = cell(1, tree.numBoxes);
     local_expansions    = cell(1, tree.numBoxes);
-    % Handle root level outside loop
+    % Handle root level outside loop (Troot = periodic or windowed)
     root = 1;
-    local_expansions{root} = Twin(proxy_charges{root});
+    local_expansions{root} = Troot(proxy_charges{root});
     % Downward pass
     for l=0:tree.maxLevel-1
         rl = 1/2^l;

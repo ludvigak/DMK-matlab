@@ -39,8 +39,12 @@ classdef SplitKernelInterface < handle
         udiff = diffkernel(targets, points, charges, level)
         % Difference kernel D_l(r)
 
+        Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, level)
+        % Fourier transform of mollified kernel M_l(r)
+        % returns: function handle that applies kernel
+
         Dlhat_fun = diffkernel_fourier(k1, k2, k3, level)
-        % Fourier transform o difference kernel D_l(r)
+        % Fourier transform of difference kernel D_l(r)
         % returns: function handle that applies kernel
         
         W0hat_fun = winkernel_fourier(k1, k2, k3, Ctrunc)

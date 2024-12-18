@@ -116,7 +116,19 @@ classdef laplace_pswf < kernels.SplitKernelInterface
             Dl = (self.pswf_erf(r/rlp1) - self.pswf_erf(r/rl))./r;
             udiff = Dl.' * charges;
         end
-        
+
+        function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, level)
+            rl = 1/2^level;
+            ksq = k1.^2 + k2.^2 + k3.^2;
+            kabs = sqrt(ksq);
+            Mlhat = 4*pi*self.psi(kabs*rl/self.c_pswf)./ksq/self.psi(0);
+            Mlhat(ksq==0) = 0;
+            function uhat=apply(fhat)
+                uhat = Mlhat .* fhat;
+            end
+            Mlhat_fun = @apply;
+        end
+
         function Dlhat_fun = diffkernel_fourier(self, k1, k2, k3, level)
         % Fourier transform of Laplace difference kernel
         % Returns operator that applies kernel

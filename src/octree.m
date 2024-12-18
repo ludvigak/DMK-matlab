@@ -4,11 +4,13 @@ classdef octree < handle
     properties (Access=public)
         N
         maxLevel
+        periodic
         points
         boxLevels
         boxParents
         boxChildren
         boxColleagues
+        boxColleagueShifts
         boxCorners
         boxPoints
         pointBoxes
@@ -17,10 +19,16 @@ classdef octree < handle
     end
 
     methods
-        function tree = octree(points, maxLevel)
+        function tree = octree(points, maxLevel, options)
+            arguments
+                points (:,3)
+                maxLevel
+                options.periodic (1,1) logical = false
+            end
         % Points are Nx3 in [-1/2, 1/2]^3
             tree.N = size(points, 1);
             tree.maxLevel = maxLevel;
+            tree.periodic = options.periodic;
             tree.points = points;
             tree.boxLevels = 0;
             tree.boxParents = 0;
@@ -88,7 +96,18 @@ classdef octree < handle
 
         function create_colleague_lists(tree)
             tree.boxColleagues = cell(1, tree.numBoxes);
-            tree.boxColleagues{1} = 1;
+            tree.boxColleagueShifts = cell(1, tree.numBoxes);
+            if tree.periodic
+                tree.boxColleagues{1}      = [1];
+                % 3x3x3 periodic shifts of root box
+                [sx,sy,sz] = ndgrid(-1:1);
+                S = [sx(:) sy(:) sz(:)];
+                tree.boxColleagues{1} = ones(1, 27);
+                tree.boxColleagueShifts{1} = S;
+            else
+                tree.boxColleagues{1} = 1;
+                tree.boxColleagueShifts{1} = [0 0 0];
+            end
             for l=1:tree.maxLevel
                 rl = 1/2^l;
                 level_boxes = find(tree.boxLevels == l);
@@ -96,19 +115,29 @@ classdef octree < handle
                     box = level_boxes(i);
                     parent = tree.boxParents(box);
                     parentColleagues = tree.boxColleagues{parent};
-                    possible_colleagues = zeros(1, 2+9*numel(parentColleagues));
+                    parentColleagueShifts = tree.boxColleagueShifts{parent};
+                    possible_colleagues = zeros(1, 27*8);
+                    possible_shifts = zeros(27*8, 3);
                     n = 0;
-                    for pc = parentColleagues
+                    % Parent's colleagues' children are possible colleagues
+                    for pc_idx = 1:numel(parentColleagues)
+                        pc = parentColleagues(pc_idx);
+                        pc_shift = parentColleagueShifts(pc_idx, :);
                         pc_children = reshape(tree.boxChildren{pc}, 1, []);
                         m = numel(pc_children);
-                        possible_colleagues(n+1:n+m) = pc_children;
+                        possible_colleagues((n+1):(n+m)) = pc_children;
+                        possible_shifts((n+1):(n+m), :) = repmat(pc_shift, m, 1);
                         n = n+m;
                     end
                     possible_colleagues = possible_colleagues(1:n);
-                    dist = max(abs( tree.box_center(box) - tree.box_center(possible_colleagues)),...
+                    possible_shifts = possible_shifts(1:n, :);
+                    shifted_centers = tree.box_center(possible_colleagues) + possible_shifts;
+                    dist = max(abs( tree.box_center(box) - shifted_centers),...
                                [], 2);
                     % Colleague center-to-center is within r_l + safety factor
-                    tree.boxColleagues{box} = possible_colleagues(dist < rl*1.000001);
+                    mask = dist < rl*1.000001;
+                    tree.boxColleagues{box} = possible_colleagues(mask);
+                    tree.boxColleagueShifts{box} = possible_shifts(mask, :);
                 end
             end
         end

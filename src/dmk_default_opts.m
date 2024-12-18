@@ -4,6 +4,7 @@ function dmk_opt = dmk_default_opts(args)
         args.kernel function_handle = @kernels.laplace_ewald
                        % which kernel+split to use
         args.p = -1    % polynomial order, default (-1) is to adaptively decide
+        args.periodic (1,1) logical = false;
         args.verbose (1,1) logical = false
     end
     % Unpack args
@@ -31,6 +32,8 @@ function dmk_opt = dmk_default_opts(args)
     nf_win = Kmax_win;
     hf_win = Kmax_win/nf_win;
     Ctrunc = sqrt(3) + 1;
+    % Root level periodic
+    nf_per = ceil(kernel.Kmax / (2*pi));
     % Setup planewave ops
     r0 = 1;
     D = 3*r0;
@@ -45,8 +48,10 @@ function dmk_opt = dmk_default_opts(args)
     dmk_opt.nf_win = nf_win;
     dmk_opt.hf_win = hf_win;
     dmk_opt.Ctrunc = Ctrunc;
+    dmk_opt.nf_per = nf_per;
     dmk_opt.h0 = h0;
     dmk_opt.nf = nf;
+    dmk_opt.periodic = args.periodic;
     dmk_opt.verbose = args.verbose;
     % Report
     if dmk_opt.verbose
