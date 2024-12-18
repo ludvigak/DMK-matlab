@@ -4,6 +4,10 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
 % DMK downward pass
     outgoing_expansions = cell(1, tree.numBoxes);
     local_expansions    = cell(1, tree.numBoxes);
+    % Handle root level outside loop
+    root = 1;
+    local_expansions{root} = Twin(proxy_charges{root});
+    % Downward pass
     for l=0:tree.maxLevel-1
         rl = 1/2^l;
         box_list = find(tree.boxLevels==l);
@@ -14,28 +18,24 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
             box_proxy_charges = proxy_charges{box};
             outgoing_expansions{box} = Tprox2pw(box_proxy_charges, l);
         end
-        % Collect incoming
+        % Collect incoming (including self)
         for idx=1:Nlevel
             box = box_list(idx);
             clist = tree.boxColleagues{box};
+            slist = tree.boxColleagueShifts{box};
             incoming = 0;
-            for coll=clist
+            for cidx=1:numel(clist)
+                coll = clist(cidx);
+                coll_shift = slist(cidx, :);
+                coll_center = tree.box_center(coll);
                 pw = outgoing_expansions{coll};
-                shift = (tree.box_center(coll)-tree.box_center(box)) / rl;
+                shift = (coll_center+coll_shift-tree.box_center(box)) / rl;
                 incoming = incoming + Tpwshift(pw, shift(1), shift(2), shift(3));
             end
             % Convert to local
             local = Tpw2poly(incoming, l);
-            if box==1
-                % At root level, also add expansion of windowed kernel
-                local = local + Twin(proxy_charges{1});
-            end
-            if isempty(local_expansions{box})
-                local_expansions{box} = local;
-            else
-                local_expansions{box} = local_expansions{box} + local;
-            end
-            % Shift to child
+            local_expansions{box} = local_expansions{box} + local;
+            % Shift to children
             for k=1:2
                 for j=1:2
                     for i=1:2
@@ -50,8 +50,8 @@ function local_expansions = collect_local_expansions(tree, proxy_charges, ...
         end
         % Free outgoing expansions
         for idx=1:Nlevel
+            box = box_list(idx);
             outgoing_expansions{box} = [];
-        end        
+        end
     end % end levels
 end
-
