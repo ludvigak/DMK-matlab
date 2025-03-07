@@ -41,7 +41,7 @@ classdef StressletFourierSplit < kernels.StressletBase
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
             % Fourier integrals for evaluating mollified biharmonic
-            [f, df, d2f, d3f] = radial_fourier_kernels();
+            [f, df, d2f, d3f] = radial_fourier_kernels_gen();
             %Bmoll   = @(r) -4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
             d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;

@@ -9,7 +9,10 @@ function [f, df, d2f, d3f] = radial_fourier_kernels()
 %     fprintf('d%df_lim = %s\n', d, func2str(matlabFunction(limit(diff(f,d)), r, 0)))
 % end
 % ==================
-    f = @(k,r)  k./r   .*(sin(k.*r));
+%
+% NOTE: These suffers from numerical cancellation. 
+    
+    f = @(k,r)  k./r   .*(sin(k.*r)); % Not needed, kept for completeness
     function y=df_(k,r)
         assert(size(r, 1)==1)
         y = -k./r.^2.*(sin(k.*r)-k.*r.*cos(k.*r));
