@@ -38,24 +38,8 @@ classdef StokesletFourierSplit < kernels.StokesletBase
             [Bwin, alpha, beta] = windowed_biharmonic(k, R);
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
-            % Setup the integrands that correspond to the radial Fourier transforms,
-            % and their derivatives w.r.t. radius r
-            %f = @(k,r)  k./r   .*(sin(k.*r)); % Not needed, kept for completeness
-            function y=df(k,r)
-                assert(size(r, 1)==1)
-                y = -k./r.^2.*(sin(k.*r)-k.*r.*cos(k.*r));
-                if any(r==0)
-                    y(:,r==0) = 0;
-                end
-            end
-            function y=d2f(k,r)
-                assert(size(r, 1)==1)
-                y = -k./r.^3.*(sin(k.*r).*-2.0+k.^2.*r.^2.*sin(k.*r)+k.*r.*cos(k.*r).*2.0);
-                if any(r==0)
-                    y(:, r==0) = -k.^4/3;
-                end
-            end
             % Fourier integrals for evaluating mollified biharmonic
+            [f, df, d2f] = radial_fourier_kernels();
             %Bmoll   = @(r) 4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
             dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
             d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
