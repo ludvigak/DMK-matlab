@@ -41,19 +41,36 @@ classdef StressletFourierSplit < kernels.StressletBase
             gamma_hat = fourier_scaling(self, k.^2, level);
             Bmollhat = Bwin .* gamma_hat;
             % Fourier integrals for evaluating mollified biharmonic
-            [f, df, d2f, d3f] = radial_fourier_kernels_gen();
-            %Bmoll   = @(r) -4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            d3Bmoll = @(r) 4*pi*hk*sum(d3f(k,r) .* Bmollhat, 1) / (2*pi)^3;
-            %  Residual biharmonic, including corrections
-            %Bres   = @(r) r + alpha + beta*r.^2 - Bmoll(r);
-            dBres  = @(r) 1 + 2*beta*r - dBmoll(r);
-            d2Bres = @(r) 2*beta - d2Bmoll(r);
-            d3Bres = @(r) - d3Bmoll(r);
-            % Construct chebfuns of diagonal and offdiagonal
-            Rdiag_cheb = chebfun(@(r) r.^2.*d3Bres(r), [0 rl]);
-            Roffd_cheb = chebfun(@(r) dBres(r) - r .* d2Bres(r) + 1/3*r.^2 .* d3Bres(r), [0 rl]);
+            if true
+                % --- Using Taylor expansions of radial kernels
+                %     This is _marginally_ more accurate, and much more complicated!
+                [f, df, d2f, d3f] = radial_fourier_kernels_gen();
+                Bmoll   = @(r) 4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+                dBmoll  = @(r) 4*pi*hk*sum( df(k,r) .* Bmollhat, 1) / (2*pi)^3;
+                d2Bmoll = @(r) 4*pi*hk*sum(d2f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+                d3Bmoll = @(r) 4*pi*hk*sum(d3f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+                %  Residual biharmonic, including corrections
+                Bres   = @(r) r + alpha + beta*r.^2 - Bmoll(r);
+                dBres  = @(r) 1 + 2*beta*r - dBmoll(r);
+                d2Bres = @(r) 2*beta - d2Bmoll(r);
+                d3Bres = @(r) - d3Bmoll(r);
+                % Construct chebfuns of diagonal and offdiagonal
+                Rdiag_cheb = chebfun(@(r) r.^2.*d3Bres(r), [0 rl]);
+                Roffd_cheb = chebfun(@(r) dBres(r) - r .* d2Bres(r) + 1/3*r.^2 .* d3Bres(r), [0 rl]);
+            else
+                % ---- Differentiate using accurate chebfuns
+                %      Much simpler. Turbo mode is the key!
+                f = @(k,r)  k./r   .*(sin(k.*r));
+                Bmoll = @(r) 4*pi*hk*sum(  f(k,r) .* Bmollhat, 1) / (2*pi)^3;
+                Bres = @(r) r + alpha + beta*r.^2 - Bmoll(r);
+                Bres_cheb = chebfun(Bres, [0 rl], 'turbo');
+                r_cheb = chebfun(@(r) r, [0 rl]);
+                dBres_cheb = diff(Bres_cheb);
+                d2Bres_cheb = diff(Bres_cheb, 2);
+                d3Bres_cheb = diff(Bres_cheb, 3);
+                Rdiag_cheb = r_cheb.^2 .* d3Bres_cheb;
+                Roffd_cheb = dBres_cheb - r_cheb .* d2Bres_cheb + 1/3*r_cheb.^2 .* d3Bres_cheb;
+            end
             % Self interaciton is zero
             c_self = 0;
         end 
