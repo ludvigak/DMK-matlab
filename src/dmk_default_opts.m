@@ -6,11 +6,16 @@ function dmk_opt = dmk_default_opts(args)
         args.p = -1    % polynomial order, default (-1) is to adaptively decide
         args.periodic (1,1) logical = false;
         args.verbose (1,1) logical = false
+        args.kernel_args = {} % Name-value pairs passed to kernel constructor instead of tolerance=tol
     end
     % Unpack args
     p      = args.p;
     tol    = args.tolerance;
-    kernel = args.kernel(tolerance=tol);
+    if isempty(args.kernel_args)
+        kernel = args.kernel(tolerance=tol);
+    else
+        kernel = args.kernel(args.kernel_args{:});
+    end
     if p==-1
         % Estimate suitable p
         p_list = 2:2:100;
