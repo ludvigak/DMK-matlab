@@ -16,7 +16,8 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     p = 40;
     N = 20;
     tol = args.tol;
-    kernel = kernel_ref(tolerance=tol);
+    opt = dmk_default_opts(tolerance=tol, kernel=kernel_ref, p=p);
+    kernel = opt.kernel;
     % Setup test
     dim = kernel.dim_in;
     points = rand(N, 3) - 1/2;
@@ -31,9 +32,9 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     % Fourier setup
     % TODO: Move into kernel
     Kmax = ceil( kernel.Kmax );
-    nf = Kmax;
-    hf = Kmax/nf;
-    Ctrunc = sqrt(3) + 1;
+    nf = opt.nf_win;
+    hf = opt.hf_win;
+    Ctrunc = opt.Ctrunc;
     Twin = operator_windowed(p, hf, nf, Ctrunc, kernel);
     % Evaluate windowed kernel at proxy points
     far_expa = Twin(box_proxy_charges);

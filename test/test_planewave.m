@@ -9,14 +9,12 @@ end
 function run_planeswaves(testCase, kernel_ref)
     rng(1);
     tol = 1e-8;
-    kernel = kernel_ref(tolerance=tol);
     p = 50;
     max_level = 2;
-    r0 = 1;
-    D = 3*r0;
-    h0 = 2*pi/D;
-    K0 = 2*kernel.Kmax;
-    nf = ceil(K0/h0);
+    opt = dmk_default_opts(tolerance=tol, kernel=kernel_ref, p=p);
+    kernel = opt.kernel;
+    nf = opt.nf;
+    h0 = opt.h0;
     dim = kernel.dim_in;
     Tprox2pw = operator_proxy2planewave(p, h0, nf, max_level, kernel);
     Tpw2poly = operator_planewave2local(p, h0, nf, max_level);
@@ -24,8 +22,6 @@ function run_planeswaves(testCase, kernel_ref)
     for l = 0:max_level
         rl = 1/2^l;
         hl = h0 / rl;
-        Kl = 2/rl * kernel.Kmax;
-        nf = ceil(Kl/hl);
         % Set up random sources in box [-1/2, 1/2]^3
         N = 20;
         points =  rl*(rand(N, 3)-1/2);

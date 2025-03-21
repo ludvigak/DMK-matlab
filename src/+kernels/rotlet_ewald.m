@@ -23,7 +23,7 @@ classdef rotlet_ewald < kernels.RotletBase
                 end
                 obj.sigma_0 = args.sigma_0;
             else
-                obj.sigma_0 = 1/sqrt(log(1/obj.tolerance));
+                obj.sigma_0 = 0.95*1/sqrt(log(1/obj.tolerance));
             end
             obj.Kmax = 2/obj.sigma_0^2;
         end

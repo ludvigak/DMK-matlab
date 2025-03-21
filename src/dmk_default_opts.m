@@ -36,15 +36,18 @@ function dmk_opt = dmk_default_opts(args)
     Kmax_win = ceil(kernel.Kmax);
     nf_win = Kmax_win;
     hf_win = Kmax_win/nf_win;
+    nf_win = nf_win - 1; % Truncate last point
     Ctrunc = sqrt(3) + 1;
     % Root level periodic
-    nf_per = ceil(kernel.Kmax / (2*pi));
+    nf_per = ceil(kernel.Kmax / (2*pi)) - 1; % Truncate last point
     % Setup planewave ops
     r0 = 1;
     D = 3*r0;
     h0 = 2*pi/D;
     K0 = 2*kernel.Kmax;
     nf = ceil(K0/h0);
+    h0 = K0/nf; % Adjust spacing used
+    nf = nf-1;  % Truncate last point
     % Store in struct
     dmk_opt = struct();
     dmk_opt.kernel = kernel;
