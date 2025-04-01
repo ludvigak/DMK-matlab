@@ -40,6 +40,7 @@ function dmk_opt = dmk_default_opts(args)
     Ctrunc = sqrt(3) + 1;
     % Root level periodic
     nf_per = ceil(kernel.Kmax / (2*pi)) - 1; % Truncate last point
+    nf_per = max(nf_per, 1);
     % Setup planewave ops
     r0 = 1;
     D = 3*r0;
