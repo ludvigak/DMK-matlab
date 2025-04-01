@@ -1,10 +1,8 @@
-classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
-% Stokes kernel split using the Hasimoto-like PSWF decomposition
+classdef stresslet_pswf2 < kernels.StressletFourierSplit
+% Stresslet split using the Hasimoto-like PSWF decomposition
 
     properties (Constant)
-        name    = "Stokes PSWF v2";
-        dim_in  = 3;
-        dim_out = 3;
+        name    = "Stresslet PSWF2";
     end
 
     properties
@@ -16,13 +14,13 @@ classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
     end
 
     methods
-        function obj = stokeslet_pswf2(args)
+        function obj = stresslet_pswf2(args)
         % Constructor, takes either tolerance or sigma_0 as input
             arguments
                 args.tolerance (1,1) double = 0 % tolerance default=0 (unset)
                 args.c_pswf (1,1) double = 0   % sigma_0   default=0 (unset)
             end
-            obj = obj@kernels.StokesletFourierSplit(tolerance=args.tolerance);
+            obj = obj@kernels.StressletFourierSplit(tolerance=args.tolerance);
             if args.tolerance==0
                 if args.c_pswf==0
                     error("Need either tolerance or c_pswf")
@@ -33,12 +31,13 @@ classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
                 % TODO: need something better
                 for c_pswf=1:0.5:60
                     psi = pswf(0, c_pswf);
-                    if psi(1) < args.tolerance
+                    if abs(psi(1)) < args.tolerance
                         break
                     end
                 end
-                obj.c_pswf = c_pswf + 4; % Heuristic
-                fprintf('[stokeslet_pswf2] auto-selected c_pswf=%g\n', obj.c_pswf);
+                obj.c_pswf = c_pswf + 7; % Heuristic (probably too much, but needed for tests)
+                                         % c_pswf + 5 is enough to get interpolation working
+                fprintf('[stresslet_pswf2] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
             % Init PSWF
             psi = pswf(0, obj.c_pswf);

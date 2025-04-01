@@ -9,6 +9,7 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
         c_pswf
         c_self;
         pswf_cheb
+        pswf_cheb_d2
     end
 
     methods
@@ -41,6 +42,7 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
             psi = pswf(0, obj.c_pswf);
             obj.Kmax = obj.c_pswf;
             obj.pswf_cheb = psi;
+            obj.pswf_cheb_d2 = pswf0_diff(obj.c_pswf, 2);
             % Precompute residual decay
             % (enough to do at zero-level since scale-invariant)
             [obj.Rdiag_cheb, obj.Roffd_cheb, obj.c_self] = obj.precompute_real_decay(0);
@@ -48,16 +50,16 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
 
         function gamma_hat = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
-            psi = self.pswf_cheb;
-            psi = psi/psi(0);
-            dpsi = diff(psi);
-            d2psi = diff(dpsi);
+            scaling = self.pswf_cheb(0);
+            psi = self.pswf_cheb / scaling;
+            d2psi = self.pswf_cheb_d2 / scaling;
             alpha = -d2psi(0)*rl^2/self.c_pswf^2/2;
             k = sqrt(ksq);
             psi_arg = k*rl/self.c_pswf;
             gamma_hat = zeros(size(psi_arg));
             supp_mask = psi_arg <= 1; % Truncate to PSWF support
             gamma_hat(supp_mask) = psi(psi_arg(supp_mask)) .* (1 + alpha*ksq(supp_mask));
+
         end
     end
 end
