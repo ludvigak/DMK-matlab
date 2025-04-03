@@ -45,8 +45,9 @@ classdef rotlet_pswf < kernels.RotletBase
             obj.pswf_lambda = 2/psi(0);
             %obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
             %obj.pswf_cheb = obj.pswf_cheb / obj.pswf_c0;
-            pswf_erfc = @(z) integral(obj.pswf_cheb, z, 1);
-            obj.pswf_erfc_cheb = chebfun(pswf_erfc, [0 1]);
+            %pswf_erfc = @(z) integral(obj.pswf_cheb, z, 1);
+            %obj.pswf_erfc_cheb = chebfun(pswf_erfc, [0 1]);
+            obj.pswf_erfc_cheb = sum(psi) - cumsum(psi);
         end
 
         function y = psi(self, x)
