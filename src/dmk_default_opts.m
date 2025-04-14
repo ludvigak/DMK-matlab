@@ -46,7 +46,7 @@ function dmk_opt = dmk_default_opts(args)
     D = 3*r0;
     h0 = 2*pi/D;
     K0 = 2*kernel.Kmax;
-    nf = ceil(K0/h0);
+    nf = ceil(K0/h0 * (1-eps)); % Parameters usually set for this to be integer
     h0 = K0/nf; % Adjust spacing used
     nf = nf-1;  % Truncate last point
     % Store in struct

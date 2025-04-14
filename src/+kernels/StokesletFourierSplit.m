@@ -61,8 +61,6 @@ classdef StokesletFourierSplit < kernels.StokesletBase
                 dBres_cheb = diff(Bres_cheb);
                 d2Bres_cheb = diff(Bres_cheb, 2);
                 d3Bres_cheb = diff(Bres_cheb, 3);
-                Rdiag_cheb = r_cheb.^2 .* d3Bres_cheb;
-                Roffd_cheb = dBres_cheb - r_cheb .* d2Bres_cheb + 1/3*r_cheb.^2 .* d3Bres_cheb;
                 Rdiag_cheb = r_cheb .* d2Bres_cheb + dBres_cheb;
                 Roffd_cheb = -r_cheb .* d2Bres_cheb + dBres_cheb;
             end
