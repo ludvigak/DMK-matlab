@@ -77,8 +77,8 @@ function test_windowed_stokeslet_pswf(testCase)
     run_windowed_kernel(testCase, @kernels.stokeslet_pswf);
 end
 
-function test_windowed_stokeslet_pswf2(testCase)
-    run_windowed_kernel(testCase, @kernels.stokeslet_pswf2);
+function test_windowed_stokeslet_pswf_num(testCase)
+    run_windowed_kernel(testCase, @kernels.stokeslet_pswf_num);
 end
 
 function test_windowed_stokeslet_pswf3(testCase)

@@ -4,10 +4,10 @@ clear; rng(1);
 %kernel = @kernels.laplace_pswf;
 %kernel = @kernels.stokeslet_hasimoto;
 %kernel = @kernels.stokeslet_pswf;
-%kernel = @kernels.stokeslet_pswf2;
 %kernel = @kernels.stresslet_hasimoto;
 %kernel = @kernels.stresslet_pswf;
-kernel = @kernels.rotlet_ewald;
+%kernel = @kernels.rotlet_ewald;
+%kernel = @kernels.rotlet_pswf;
 
 tol       = 1e-10;
 N         = 2000;
@@ -41,4 +41,5 @@ if N <= 1e5
     end
     toc(atic)
     max_rel_err = norm(u_ref(:) - u_dmk(:), inf) / norm(u_ref(:), inf)
+    l2_rel_err = norm(u_ref(:) - u_dmk(:), 2) / norm(u_ref(:), 2)
 end

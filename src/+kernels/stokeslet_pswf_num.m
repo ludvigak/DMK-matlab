@@ -1,8 +1,9 @@
-classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
-% Stokes kernel split using the Hasimoto-like PSWF decomposition
-
+classdef stokeslet_pswf_num < kernels.StokesletFourierSplit
+% Stokes kernel split using the Hasimoto-like PSWF decomposition (the bad one)
+% and numerically computed residual kernel.
+    
     properties (Constant)
-        name    = "Stokeslet PSWF v2";
+        name    = "Stokes PSWF (num)";
         dim_in  = 3;
         dim_out = 3;
     end
@@ -10,11 +11,11 @@ classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
     properties
         c_pswf
         c_self;
-        gamma_hat
+        pswf_cheb
     end
 
     methods
-        function obj = stokeslet_pswf2(args)
+        function obj = stokeslet_pswf_num(args)
         % Constructor, takes either tolerance or sigma_0 as input
             arguments
                 args.tolerance (1,1) double = 0 % tolerance default=0 (unset)
@@ -36,23 +37,29 @@ classdef stokeslet_pswf2 < kernels.StokesletFourierSplit
                     end
                 end
                 obj.c_pswf = c_pswf + 4; % Heuristic
-                fprintf('[stokeslet_pswf2] auto-selected c_pswf=%g\n', obj.c_pswf);
+                fprintf('[stokeslet_pswf_num] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
-            obj.Kmax = obj.c_pswf;
-            b = biharmonic_pswf_split(obj.c_pswf);
-            obj.Rdiag_cheb =  b.r .* b.d2Bres + b.dBres;
-            obj.Roffd_cheb = -b.r .* b.d2Bres + b.dBres;
-            obj.c_self = 2*b.d2Bmoll(0);
-            obj.gamma_hat = b.gamma_hat;
+            % Init PSWF
+            psi = pswf(0, obj.c_pswf);
+            obj.Kmax = obj.c_pswf;           
+            obj.pswf_cheb = psi;
+            % Precompute residual decay
+            % (enough to do at zero-level since scale-invariant)
+            [obj.Rdiag_cheb, obj.Roffd_cheb, obj.c_self] = obj.precompute_real_decay(0);
         end
 
         function gamma_hat = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
+            psi = self.pswf_cheb;
+            psi = psi/psi(0);
+            dpsi = diff(psi);
+            d2psi = diff(dpsi);
+            alpha = -d2psi(0)*rl^2/self.c_pswf^2/2;
             k = sqrt(ksq);
             psi_arg = k*rl/self.c_pswf;
-            supp_mask = psi_arg <= 1; % Truncate to PSWF support
             gamma_hat = zeros(size(psi_arg));
-            gamma_hat(supp_mask) = self.gamma_hat(psi_arg(supp_mask));
+            supp_mask = psi_arg <= 1; % Truncate to PSWF support
+            gamma_hat(supp_mask) = psi(psi_arg(supp_mask)) .* (1 + alpha*ksq(supp_mask));
         end
     end
 end
