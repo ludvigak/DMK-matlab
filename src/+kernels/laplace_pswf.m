@@ -9,10 +9,10 @@ classdef laplace_pswf < kernels.SplitKernelInterface
 
     properties
         c_pswf
-        pswf_cheb
-        pswf_c0
-        pswf_c2
-        pswf_erf_cheb
+        gamma_hat
+        d2gamma_hat
+        Phi
+        dPhi
     end
 
     methods
@@ -42,29 +42,28 @@ classdef laplace_pswf < kernels.SplitKernelInterface
             end
             % Init PSWF
             obj.Kmax = obj.c_pswf;
-            obj.pswf_cheb = pswf(0, obj.c_pswf);
-            obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
-            x = chebfun(@(x) x);
-            obj.pswf_c2 = integral(x*x*obj.pswf_cheb, 0, 1);
-            pswf_erf = @(z) integral(obj.pswf_cheb, 0, z) / obj.pswf_c0;
-            obj.pswf_erf_cheb = chebfun(pswf_erf, [0 1]);
+            h = harmonic_pswf_split(obj.c_pswf);
+            obj.gamma_hat = h.gamma_hat;
+            obj.d2gamma_hat = h.d2gamma_hat;
+            obj.Phi = h.Phi;
+            obj.dPhi = h.dPhi;
         end
 
-        function y = psi(self, x)
-            y = zeros(size(x));
-            y(x <= 1) = self.pswf_cheb(x(x <= 1));
+        function gamma_hat = fourier_scaling(self, ksq, level)
+            rl = 1/2^level;
+            kabs = sqrt(ksq);
+            mask = (kabs*rl/self.c_pswf) < 1;
+            gamma_hat = zeros(size(ksq));
+            gamma_hat(mask) = self.gamma_hat(kabs(mask)*rl/self.c_pswf);
         end
 
-        function y = pswf_erf(self, x)
-            y = ones(size(x));
-            mask = (x<1);
-            xm = x(mask);
-            y(mask) = self.pswf_erf_cheb(xm);
+        function R = real_decay(self, r, level)
+            rl = 1/2^level;
+            mask = (r/rl <= 1);
+            R = zeros(size(r));
+            R(mask) = self.Phi(r(mask)/rl);
         end
 
-        function y = pswf_erfc(self, x)
-            y = 1 - self.pswf_erf(x);
-        end
     end
     
     methods (Static)
@@ -93,13 +92,12 @@ classdef laplace_pswf < kernels.SplitKernelInterface
     methods
         function ures = reskernel(self, targets, points, charges, level)
         % Laplace residual kernel R_l(r)
-            rl = 1/2^level;
             targets = targets.';
             assert(size(targets, 1)==3);
             r = sqrt( (points(:, 1)-targets(1, :)).^2 + ...
                       (points(:, 2)-targets(2, :)).^2 + ...
                       (points(:, 3)-targets(3, :)).^2 );
-            Rl = self.pswf_erfc(r/rl)./r;
+            Rl = self.real_decay(r, level)./r;
             Rl(r==0) = 0;
             ures = (charges.' * Rl).';
         end
@@ -113,15 +111,13 @@ classdef laplace_pswf < kernels.SplitKernelInterface
             r = sqrt( (points(:, 1)-targets(1, :)).^2 + ...
                       (points(:, 2)-targets(2, :)).^2 + ...
                       (points(:, 3)-targets(3, :)).^2 );
-            Dl = (self.pswf_erf(r/rlp1) - self.pswf_erf(r/rl))./r;
+            Dl = (-self.real_decay(r, level+1) + self.real_decay(r, level))./r;
             udiff = Dl.' * charges;
         end
 
         function Mlhat_fun = mollkernel_fourier(self, k1, k2, k3, level)
-            rl = 1/2^level;
             ksq = k1.^2 + k2.^2 + k3.^2;
-            kabs = sqrt(ksq);
-            Mlhat = 4*pi*self.psi(kabs*rl/self.c_pswf)./ksq/self.psi(0);
+            Mlhat = 4*pi./ksq.*self.fourier_scaling(ksq, level);
             Mlhat(ksq==0) = 0;
             function uhat=apply(fhat)
                 uhat = Mlhat .* fhat;
@@ -136,9 +132,9 @@ classdef laplace_pswf < kernels.SplitKernelInterface
             rlp1 = rl/2;
             ksq = k1.^2 + k2.^2 + k3.^2;
             kabs = sqrt(ksq);
-            Dlhat = 4*pi*(self.psi(kabs*rlp1/self.c_pswf) ...
-                          - self.psi(kabs*rl/self.c_pswf))./ksq/self.psi(0);
-            Dlhat(ksq==0) = 2*pi*self.pswf_c2/self.pswf_c0*(rl^2-rlp1^2);
+            Dlhat = 4*pi./ksq.*(self.fourier_scaling(ksq, level+1) - ...
+                                self.fourier_scaling(ksq, level) );
+            Dlhat(ksq==0) = 2*pi*self.d2gamma_hat(0)/self.c_pswf^2*(rlp1^2-rl^2);
             function uhat=apply(Psi)
                 uhat = Dlhat.*Psi;
             end
@@ -150,7 +146,7 @@ classdef laplace_pswf < kernels.SplitKernelInterface
             ksq = k1.^2 + k2.^2 + k3.^2;
             k = sqrt(ksq);
             Hwin = windowed_harmonic(k, Ctrunc);
-            W0hat = Hwin .* self.psi(k/self.c_pswf)/self.psi(0);
+            W0hat = Hwin .* self.fourier_scaling(ksq, 0);
             function [uhat, const] = apply(fhat)
                 const = 0;
                 uhat = W0hat .* fhat;
@@ -160,7 +156,7 @@ classdef laplace_pswf < kernels.SplitKernelInterface
 
         function uself = self_interaction(self, charges, level)
             rl = 1/2^level;
-            const = -self.psi(0)/(self.pswf_c0*rl);
+            const = self.dPhi(0)/rl;
             uself = charges*const;
         end
     end

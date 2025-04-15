@@ -6,7 +6,7 @@ classdef RotletBase < kernels.SplitKernelInterface
         fourier_decay = fourier_scaling(self, ksq, level)
         % Fourier scaling, corresponding to Fourier transform of screening function
         R = real_decay(self, r, level)
-        % Decay of r^2 * HR'(r)
+        % Decay of -r^2 * HR'(r)
     end
 
     properties (Constant)
@@ -83,9 +83,9 @@ classdef RotletBase < kernels.SplitKernelInterface
             % Decay
             R = self.real_decay(r, level);
             % Scaled cross product
-            c1 = -R.*(f2.*r3 - f3.*r2).*rinv3;
-            c2 = -R.*(f3.*r1 - f1.*r3).*rinv3;
-            c3 = -R.*(f1.*r2 - f2.*r1).*rinv3;
+            c1 = R.*(f2.*r3 - f3.*r2).*rinv3;
+            c2 = R.*(f3.*r1 - f1.*r3).*rinv3;
+            c3 = R.*(f1.*r2 - f2.*r1).*rinv3;
             % Sum over targets
             ures = zeros(size(targets))';
             ures(:, 1) = sum(c1, 1);

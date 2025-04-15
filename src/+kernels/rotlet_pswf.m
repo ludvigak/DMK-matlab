@@ -8,9 +8,8 @@ classdef rotlet_pswf < kernels.RotletBase
     properties
         sigma_0
         c_pswf
-        pswf_cheb
-        pswf_lambda
-        pswf_erfc_cheb
+        gamma_hat
+        R_cheb
     end
 
     methods
@@ -39,42 +38,26 @@ classdef rotlet_pswf < kernels.RotletBase
             end
             % Init PSWF
             obj.Kmax = obj.c_pswf;
-            psi = pswf(0, obj.c_pswf);
-            psi = psi / integral(psi, 0, 1); % Normalize
-            obj.pswf_cheb = psi;
-            obj.pswf_lambda = 2/psi(0);
-            %obj.pswf_c0 = integral(obj.pswf_cheb, 0, 1);
-            %obj.pswf_cheb = obj.pswf_cheb / obj.pswf_c0;
-            %pswf_erfc = @(z) integral(obj.pswf_cheb, z, 1);
-            %obj.pswf_erfc_cheb = chebfun(pswf_erfc, [0 1]);
-            obj.pswf_erfc_cheb = sum(psi) - cumsum(psi);
+            h = harmonic_pswf_split(obj.c_pswf);
+            obj.R_cheb = h.Phi - h.r*h.dPhi;
+            obj.gamma_hat = h.gamma_hat;
         end
-
-        function y = psi(self, x)
-            y = zeros(size(x));
-            y(x <= 1) = self.pswf_cheb(x(x <= 1));
-        end
-
-        function y = pswf_erfc(self, x)
-            y = zeros(size(x));
-            mask = (x<1);
-            xm = x(mask);
-            y(mask) = self.pswf_erfc_cheb(xm);
-        end
-
     end
 
     methods
         function H = fourier_scaling(self, ksq, level)
             rl = 1/2^level;
             kabs = sqrt(ksq);
-            psi_hat = self.pswf_lambda * self.psi(kabs*rl/self.c_pswf);
-            H = psi_hat/2;
+            H = zeros(size(kabs));
+            mask = (kabs*rl/self.c_pswf <= 1);
+            H(mask) = self.gamma_hat(kabs(mask)*rl/self.c_pswf);
         end
 
         function R = real_decay(self, r, level)
             rl = 1/2^level;
-            R =  -(r.*self.psi(r/rl)/rl + self.pswf_erfc(r/rl));
+            mask = (r/rl <= 1);
+            R = zeros(size(r));
+            R(mask) = self.R_cheb(r(mask)/rl);
         end
 
         function uself = self_interaction(self, charges, level)
