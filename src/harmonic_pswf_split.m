@@ -12,8 +12,7 @@ function hsplit = harmonic_pswf_split(c_pswf)
     hsplit.gamma_hat = psi_hat;
     hsplit.d2gamma_hat = d2psi_hat;
     % Real space
-    lambda = sum(psi, -1, 1);
-    r_scaling = lambda;
+    r_scaling = sum(psi, -1, 1);
     psi = restrict(psi / r_scaling, [0 1]);
     dpsi = restrict(dpsi / r_scaling, [0 1]);
     r = chebfun(@(r) r, [0 1]);
