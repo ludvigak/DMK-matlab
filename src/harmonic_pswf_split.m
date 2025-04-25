@@ -20,5 +20,6 @@ function hsplit = harmonic_pswf_split(c_pswf)
     hsplit.dPhi = -2*psi;
     hsplit.d2Phi = -2*dpsi;
     hsplit.r = r;
+    hsplit.psi = psi;
 end
 
