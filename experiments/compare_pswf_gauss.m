@@ -29,6 +29,9 @@ for f=1:2
     else
         set(gca, yscale='log')
         ylim([1e-11 10])
+        a = gca;
+        a.YAxis.TickValues = 10.^-(10:-2:0);
+        a.YAxis.MinorTickValues = [];
     end
     grid on
     legend('PSWF','Gaussian', interpreter='latex')
@@ -50,6 +53,11 @@ ylabel('$|\widehat\gamma(k)|$', interpreter='Latex')
 xlabel('$k$', interpreter='Latex')
 legend('PSWF','Gaussian', interpreter='latex')
 ylim([1e-11 10])
+a = gca;
+a.YAxis.TickValues = 10.^-(10:-2:0);
+a.YAxis.MinorTickValues = [];
+
+Kmaxfactor = c/Tg.Kmax
 
 [filepath,~,~] = fileparts(mfilename('fullpath'));
 fsize = [7.3, 5.8] * 0.9;
