@@ -5,11 +5,12 @@ clear
 % SETUP
 
 % Test setup
-tree_max_level = 1;
-N = 1000;
+tree_max_level = 2; % 2 or more for correct errors
+N = 5000;
 
-datafile = sprintf("parameter_data_N%d.mat", N);
-replace_data = true; % Overwrite existing parameters tests
+[filepath,~,~] = fileparts(mfilename('fullpath'));
+datafile = sprintf("%s/data/parameter_data_N%d.mat", filepath, N);
+replace_data = false; % Overwrite existing parameters tests
 
 p_list = 2:60;
 
