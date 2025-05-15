@@ -16,7 +16,10 @@ p_list = 2:60;
 
 periodic_status = [true false];
 
-nf_list = 2:50;
+periodic_status = [false true];
+replace_data = false;
+
+nf_list = 2:55;
 
 % PSWF
 c_list = nf_list * pi/3;
@@ -44,7 +47,8 @@ tic_start = tic();
 kernel_list = [pswf_kernels, gauss_kernels];
 for kernel_idx = 1:numel(kernel_list)
     kernel = kernel_list{kernel_idx};
-    kernel_inst = kernel(tolerance=1e-10); % Dummy instantiation of kernel (to get name)
+    % Kernel instantiation is used to get name and in direct Ewald
+    kernel_inst = kernel(tolerance=1e-16);
     kernel_name = kernel_inst.name;
     pswf_kernel = contains(kernel_name, 'PSWF');
     if pswf_kernel
@@ -125,6 +129,7 @@ for kernel_idx = 1:numel(kernel_list)
                 u_dmk     = dmk_apply(charges, dmk_state);
                 err_l2 = norm(u_ref(:) - u_dmk(:));
                 err_inf = norm(u_ref(:) - u_dmk(:), inf);
+                fprintf('relerr_l2=%.2e ', err_l2/u_l2);
                 % Insert data
                 kernel_data(data_idx, :) = ...
                     table(periodic, p, c, sigma, err_l2, err_inf, u_l2, u_inf);

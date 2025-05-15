@@ -9,6 +9,13 @@ datafile = sprintf("%s/data/parameter_data_N%d.mat", filepath, N);
 ds = load(datafile, 'data_dict');
 data_dict = ds.data_dict;
 
+% Make tolerance table
+make_tol_table([kernels.rotlet_pswf.name, kernels.rotlet_ewald.name], data_dict)
+make_tol_table([kernels.stokeslet_pswf.name, kernels.stokeslet_hasimoto.name], data_dict)
+make_tol_table([kernels.stresslet_pswf.name, kernels.stresslet_hasimoto.name], data_dict)
+
+return
+
 % Make c-p plots
 saveplots = true;
 periodic = false;
@@ -16,6 +23,90 @@ periodic = false;
 make_cp_plots(kernels.rotlet_pswf.name, periodic, data_dict, saveplots);
 make_cp_plots(kernels.stokeslet_pswf.name, periodic, data_dict, saveplots);
 make_cp_plots(kernels.stresslet_pswf.name, periodic, data_dict, saveplots);
+
+function make_tol_table(name_doublet, data_dict)
+    tol_data = [];
+    tol_list = 10.^(-3:-3:-12);
+    for tol=tol_list
+        tol_row = struct();
+        tol_row.tol = tol;
+        for name_idx=[1, 2]
+            name = name_doublet(name_idx);
+            input_data = data_dict{name};
+            input_data.relerr_l2 = input_data.err_l2 ./ input_data.u_l2;
+            for periodic = [false true]
+                data =  input_data(input_data.periodic==periodic, :);
+                if contains(name, 'PSWF')
+                    shape = 'c';
+                    suffix = '_pswf';
+                else
+                    shape = 'sigma';
+                    suffix = '_gauss';
+                end
+                if periodic
+                    suffix = [suffix '_per'];
+                else
+                    suffix = [suffix '_free'];
+                end
+                % Find best params to get below a given tolerance
+                mask = data.relerr_l2 < tol;
+                if ~any(mask)
+                    subdata = data(1,:);
+                    subdata.p = NaN;
+                    subdata.(shape) = NaN;
+                else
+                    subdata = data(mask, :);
+                end
+                best = sortrows(subdata, {'p', shape, 'relerr_l2'});
+                best = best(1,:);
+                tol_row.([shape suffix]) = best.(shape);
+                tol_row.(['p' suffix]) = best.p;
+                %tol_row.(['err' suffix]) = best.relerr_l2;
+            end
+        end
+        if isempty(tol_data)
+            tol_data = tol_row;
+        else
+            tol_data(end+1) = tol_row;
+        end
+    end
+    tol_data = struct2table(tol_data);
+
+    % Collect max values over periodic and free/space
+    max_data = table();
+    max_data.tol = tol_data.tol;
+    max_data.c_pswf = max(tol_data.c_pswf_free, tol_data.c_pswf_per);
+    max_data.p_pswf = max(tol_data.p_pswf_free, tol_data.p_pswf_per);
+    max_data.N1_pswf = 2*(max_data.c_pswf * 3/pi - 1) + 1;
+    max_data.Nper_pswf = 2*(ceil(max_data.c_pswf / (2*pi)) - 1) + 1;
+
+    max_data.sigma_gauss = max(tol_data.sigma_gauss_free, tol_data.sigma_gauss_per);
+    max_data.p_gauss = max(tol_data.p_gauss_free, tol_data.p_gauss_per);
+    Kmax = 2./max_data.sigma_gauss.^2;
+    nf = 2*Kmax / (2*pi/3);
+    max_data.N1_gauss = 2*(nf - 1) + 1;
+    max_data.Nper_gauss = 2*(ceil(Kmax / (2*pi)) - 1) + 1;
+
+    disp('----------')
+    disp(name_doublet)
+    disp(max_data)
+
+    
+    % Print Latex table
+    header = '$\epsilon$ & $\frac{3}{\pi}c$ & $p$ & $N_1$ & $N_{\rm{per}}$ & $\frac{6}{\pi}\sigma^{-2}$ & $p^{\rm G}$ &  $N_1^{\rm G}$ & $N_{\rm{per}}^{\rm G}$ \\';
+    body = sprintf('$10^{% 3d}$ & % 3d & % 3d & % 3d & % 3d & % 3.0f & % 3d & % 4.0f & % 3d \\\\\n', ...
+                   [log10(max_data.tol) max_data.c_pswf*3/pi max_data.p_pswf max_data.N1_pswf max_data.Nper_pswf 6./(pi*max_data.sigma_gauss.^2) max_data.p_gauss max_data.N1_gauss max_data.Nper_gauss]');
+    tbegin = '\begin{tabularx}{\textwidth}{Y|YYYY|YYYY}';
+    tend = '\end{tabularx}';
+    tabular = sprintf('%s\n\\hline\n%s\n\\hline\n%s\n\\hline\n%s\n', tbegin, header, body, tend)
+    kname = split(name, ' ');
+    kname = kname(1);
+    filename = sprintf('tab/%s_table.tex', kname);
+    fh = fopen(filename, 'w');
+    fprintf(fh, '%s', tabular);
+    fclose(fh);
+    disp(['Wrote ' filename])
+end
 
 function make_cp_plots(name, periodic, data_dict, saveplots)
     data = data_dict{name};
@@ -26,21 +117,6 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     else
         shape = 'sigma';
     end
-    % Find best params to get below a given tolerance
-    tol_data = table();
-    tol_list = 10.^(-1:-1:-15);
-    for tol=tol_list
-        mask = data.relerr_l2 < tol;
-        if ~any(mask)
-            continue
-        end
-        subdata = data(mask, :);
-        best = sortrows(subdata, {'p', shape, 'relerr_l2'});
-        row = best(1, :);
-        row.tol = [tol];
-        tol_data(end+1, :) = row;
-    end
-    tol_data
 
     % Find best c for each given p
     p_unique = unique(data.p)';
@@ -58,12 +134,6 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
         rows = sortrows(rows, 'relerr_l2');
         best_p_data(end+1, :) = rows(1, :);
     end
-
-
-
-    % Print latex table
-    %fprintf('%1.0e & % 3d & \n', [tol_data.tol round(tol_data.c*3/pi)]')
-
 
     % ==== PLOTS
     error_label = 'Relative $l_2$ error';
@@ -131,7 +201,8 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     axis([0 60 0 60])
     % P(2) always negative
     legend('Data', ...
-           sprintf('$p = %.2f c %.2f$', P(1), P(2)), location='SouthEast')
+           sprintf('$p = %.2f c %.2f$', P(1), P(2)), location='SouthEast',...
+          interpreter='latex')
     setup_fig();
 
     sfigure(4);
@@ -152,7 +223,8 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
         plusstr = '';
     end
     legend('Data', ...
-           sprintf('$\\log_{10} p = %.2f c %s %.2f$', P2(1), plusstr, P2(2)))
+           sprintf('$\\log_{10} p = %.2f c %s %.2f $', P2(1), plusstr, P2(2)),...
+          interpreter='latex')
 
     sfigure(5);
     clf
@@ -172,6 +244,9 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     end
 
     filename = strrep(lower(name), ' ', '_');
+    if periodic
+        filename = [filename '_periodic'];
+    end
     if saveplots
         write_fig(1, sprintf('fig/%s_c_errors' , filename))
         write_fig(2, sprintf('fig/%s_p_errors' , filename))
