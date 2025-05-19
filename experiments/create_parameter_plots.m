@@ -14,8 +14,6 @@ make_tol_table([kernels.rotlet_pswf.name, kernels.rotlet_ewald.name], data_dict)
 make_tol_table([kernels.stokeslet_pswf.name, kernels.stokeslet_hasimoto.name], data_dict)
 make_tol_table([kernels.stresslet_pswf.name, kernels.stresslet_hasimoto.name], data_dict)
 
-return
-
 % Make c-p plots
 saveplots = true;
 periodic = false;
@@ -136,7 +134,7 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     end
 
     % ==== PLOTS
-    error_label = 'Relative $l_2$ error';
+    error_label = 'Relative $l_2$ error $E$';
     if shape=='sigma'
         rescale = @(x) 1./x.^2;
         xlab = '$1/\sigma^2$';
@@ -189,19 +187,19 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     plot(x, y, '.k')
     %axis equal
     fit_mask = (best_p_data.relerr_l2 > 1e-13) & (best_p_data.relerr_l2 < 1e-3);
-    P = polyfit(x(fit_mask), y(fit_mask), 1)
+    Ppc = polyfit(x(fit_mask), y(fit_mask), 1)
     %axis([0 inf 0 inf])
     grid on
     hold on
-    xx = linspace(0, max(x));
-    plot(xx, polyval(P, xx))
+    xx = linspace(0, max(best_p_data.(shape))+5);
+    plot(xx, polyval(Ppc, xx))
     xlabel(xlab)
     ylabel('p')
     axis equal
     axis([0 60 0 60])
     % P(2) always negative
     legend('Data', ...
-           sprintf('$p = %.2f c %.2f$', P(1), P(2)), location='SouthEast',...
+           sprintf('$p = %.2f c %.2f$', Ppc(1), Ppc(2)), location='SouthEast',...
           interpreter='latex')
     setup_fig();
 
@@ -209,30 +207,45 @@ function make_cp_plots(name, periodic, data_dict, saveplots)
     clf
     z = best_p_data.relerr_l2;
     semilogy(x, z, '.k')
-    P2 = polyfit(x(fit_mask), log10(z(fit_mask)), 1)
+    Pc = polyfit(x(fit_mask), log10(z(fit_mask)), 1)
     hold on
-    semilogy(xx, 10.^( polyval(P2, xx) ), '-')
+    semilogy(xx, 10.^( polyval(Pc, xx) ), '-')
     grid on
     xlim([0 45])
     xlabel(xlab)
     ylabel(error_label)
     % P(2) always negative
-    if P2(2) > 0
+    if Pc(2) > 0
         plusstr = '+';
     else
         plusstr = '';
     end
     legend('Data', ...
-           sprintf('$\\log_{10} p = %.2f c %s %.2f $', P2(1), plusstr, P2(2)),...
+           sprintf('$\\log_{10} E = %.2f c %s %.2f $', Pc(1), plusstr, Pc(2)),...
           interpreter='latex')
 
     sfigure(5);
     clf
     semilogy(best_p_data.p, best_p_data.relerr_l2, '.k')
+    p_mask = (best_p_data.relerr_l2 < 1e-3) & (best_p_data.relerr_l2 > 1e-13);
+    Pp = polyfit(best_p_data.p(p_mask), log10(best_p_data.relerr_l2(p_mask)), 1);
+    hold on
+    pplot = linspace(0, 60);
+    semilogy(pplot, 10.^polyval(Pp, pplot))
     xlabel('$p$')
     ylabel(error_label)
     xlim([0 inf])
     grid on
+    if Pp(2) > 0
+        plusstr = '+';
+    else
+        plusstr = '';
+    end
+    legend('Data', ...
+           sprintf('$\\log_{10} E = %.2f p %s %.2f $', Pp(1), plusstr, Pp(2)),...
+          interpreter='latex')
+
+    %
 
     % Equal y-scale for all error figs
     for f=[1 2 4 5]
