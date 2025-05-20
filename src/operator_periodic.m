@@ -1,4 +1,4 @@
-function Tfar = operator_periodic(p, nf, kernel)
+function Troot = operator_periodic(p, nf, kernel)
     % Operator that converts proxy_charges to local expansion of periodic potential
     k = 2*pi*(-nf:nf);
     [k1, k2, k3] = ndgrid(k);
@@ -21,5 +21,5 @@ function Tfar = operator_periodic(p, nf, kernel)
             ufar_expa(:,d) = real( approx.kronmat_apply(M, uhat(:, d), 3) );
         end
     end
-    Tfar = @apply;
+    Troot = @apply;
 end

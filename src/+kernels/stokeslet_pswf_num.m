@@ -1,7 +1,6 @@
 classdef stokeslet_pswf_num < kernels.StokesletFourierSplit
-% Stokes kernel split using the Hasimoto-like PSWF decomposition (the bad one)
-% and numerically computed residual kernel.
-    
+% Stokes kernel split using numerically computed residual kernel.
+
     properties (Constant)
         name    = "Stokes PSWF (num)";
         dim_in  = 3;
@@ -9,6 +8,7 @@ classdef stokeslet_pswf_num < kernels.StokesletFourierSplit
     end
 
     properties
+        p
         c_pswf
         c_self;
         pswf_cheb
@@ -29,16 +29,10 @@ classdef stokeslet_pswf_num < kernels.StokesletFourierSplit
                 obj.c_pswf = args.c_pswf;
             else
                 % Autoselect PSWF bandwidth
-                % TODO: need something better
-                for c_pswf=1:0.5:60
-                    psi = pswf(0, c_pswf);
-                    if psi(1) < args.tolerance
-                        break
-                    end
-                end
-                obj.c_pswf = c_pswf + 4; % Heuristic
-                fprintf('[stokeslet_pswf_num] auto-selected c_pswf=%g\n', obj.c_pswf);
+                obj.c_pswf = pi/3*ceil(3/pi*(log10(args.tolerance)-1.11) / -0.41);
+                fprintf('[stokeslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
+            obj.p = ceil(1.43*obj.c_pswf - 2.76);
             % Init PSWF
             psi = pswf(0, obj.c_pswf);
             obj.Kmax = obj.c_pswf;           
@@ -59,7 +53,12 @@ classdef stokeslet_pswf_num < kernels.StokesletFourierSplit
             psi_arg = k*rl/self.c_pswf;
             gamma_hat = zeros(size(psi_arg));
             supp_mask = psi_arg <= 1; % Truncate to PSWF support
-            gamma_hat(supp_mask) = psi(psi_arg(supp_mask)) .* (1 + alpha*ksq(supp_mask));
+            psi_arg = psi_arg(supp_mask);
+            % Two different screenings:
+            % psi(k)*(1 + alpha*k^2)
+            gamma_hat(supp_mask) = psi(psi_arg) .* (1 + alpha*ksq(supp_mask));
+            % psi(k) - k/2*psi'(k)
+            %gamma_hat(supp_mask) = psi(psi_arg) - dpsi(psi_arg).*psi_arg/2;
         end
     end
 end

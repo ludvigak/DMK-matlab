@@ -17,20 +17,25 @@ function dmk_opt = dmk_default_opts(args)
         kernel = args.kernel(args.kernel_args{:});
     end
     if p==-1
-        % Estimate suitable p
-        p_list = 2:2:100;
-        interp_err = estimate_interp_error(p_list, kernel);
-        idx = find(interp_err < tol, 1);
-        p = p_list(idx);
-        p_err = interp_err(idx);
-        if isempty(idx)
-            error("Unable to find p satisfying tolerance=%g, lowest interp error was %g", ...
-                  tol, min(interp_err))
+        if isprop(kernel, 'p') && kernel.p > 0
+            % Use kernel suggestions
+            p = kernel.p;
+            cprintf(args, "[dmk_default_opts] using kernel value p=%d\n", p);
+        else
+            % Estimate suitable p
+            p_list = 2:2:100;
+            interp_err = estimate_interp_error(p_list, kernel);
+            idx = find(interp_err < tol, 1);
+            p = p_list(idx);
+            p_err = interp_err(idx);
+            if isempty(idx)
+                error("Unable to find p satisfying tolerance=%g, lowest interp error was %g", ...
+                      tol, min(interp_err))
+            end
+            cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
         end
-        cprintf(args, "[dmk_default_opts] selecting p=%d\n", p);
-    else
-        p_err = estimate_interp_error(p, kernel);
     end
+    p_err = estimate_interp_error(p, kernel);
     % TODO: Move default parameters into kernel
     % Setup root level windowed kernel
     Kmax_win = ceil(kernel.Kmax);

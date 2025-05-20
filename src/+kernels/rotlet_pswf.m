@@ -6,6 +6,7 @@ classdef rotlet_pswf < kernels.RotletBase
     end
 
     properties
+        p
         sigma_0
         c_pswf
         gamma_hat
@@ -26,16 +27,11 @@ classdef rotlet_pswf < kernels.RotletBase
                 end
                 obj.c_pswf = args.c_pswf;
             else
-                % TODO: need something better for bandwidth selection
-                for c_pswf=1:0.5:60
-                    psi = pswf(0, c_pswf);
-                    if psi(1) < args.tolerance
-                        break
-                    end
-                end
-                obj.c_pswf = c_pswf + 1; % Heuristic
-                fprintf('[rotlet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
+                % Autoselect PSWF bandwidth
+                obj.c_pswf = pi/3*ceil(3/pi*(log10(args.tolerance)+0.40) / -0.42);
+                fprintf('[stokeslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
+            obj.p = ceil(1.44*obj.c_pswf - 1.95);
             % Init PSWF
             obj.Kmax = obj.c_pswf;
             h = harmonic_pswf_split(obj.c_pswf);

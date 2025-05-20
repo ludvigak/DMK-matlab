@@ -8,6 +8,7 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
     end
 
     properties
+        p
         c_pswf
         c_self;
         gamma_hat
@@ -28,16 +29,10 @@ classdef stokeslet_pswf < kernels.StokesletFourierSplit
                 obj.c_pswf = args.c_pswf;
             else
                 % Autoselect PSWF bandwidth
-                % TODO: need something better
-                for c_pswf=1:0.5:60
-                    psi = pswf(0, c_pswf);
-                    if psi(1) < args.tolerance
-                        break
-                    end
-                end
-                obj.c_pswf = c_pswf + 4; % Heuristic
+                obj.c_pswf = pi/3*ceil(3/pi*(log10(args.tolerance)-1.11) / -0.41);
                 fprintf('[stokeslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
+            obj.p = ceil(1.43*obj.c_pswf - 2.76);
             obj.Kmax = obj.c_pswf;
             b = biharmonic_pswf_split(obj.c_pswf);
             obj.Rdiag_cheb =  b.r .* b.d2Bres + b.dBres;

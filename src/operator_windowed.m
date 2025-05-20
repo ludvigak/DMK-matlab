@@ -1,4 +1,4 @@
-function Tfar = operator_windowed(p, hf, nf, Ctrunc, kernel)
+function Troot = operator_windowed(p, hf, nf, Ctrunc, kernel)
 % Operator that converts proxy_charges to local expansion of windowed potential
     k = hf*(-nf:nf);
     [k1, k2, k3] = ndgrid(k);
@@ -25,5 +25,5 @@ function Tfar = operator_windowed(p, hf, nf, Ctrunc, kernel)
             ufar_expa(:,d) = real( approx.kronmat_apply(M, uhat(:, d), 3) );
         end
     end
-    Tfar = @apply;
+    Troot = @apply;
 end

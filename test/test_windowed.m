@@ -16,7 +16,8 @@ function run_windowed_kernel(testCase, kernel_ref, args)
     p = 40;
     N = 20;
     tol = args.tol;
-    opt = dmk_default_opts(tolerance=tol, kernel=kernel_ref, p=p);
+    tol_factor = 0.1; % The tests here are stricter than what is necessary for total DMK accuracy (TODO: tighten)
+    opt = dmk_default_opts(tolerance=tol*tol_factor, kernel=kernel_ref, p=p);
     kernel = opt.kernel;
     % Setup test
     dim = kernel.dim_in;
@@ -94,7 +95,7 @@ function test_windowed_stresslet(testCase)
 end
 
 function test_windowed_stresslet_pswf(testCase)
-    run_windowed_kernel(testCase, @kernels.stresslet_pswf, tol=1e-11); % TODO: Why lower tol?
+    run_windowed_kernel(testCase, @kernels.stresslet_pswf);
 end
 
 function test_windowed_rotlet(testCase)

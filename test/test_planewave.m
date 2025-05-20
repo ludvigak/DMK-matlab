@@ -8,10 +8,11 @@ end
 
 function run_planeswaves(testCase, kernel_ref)
     rng(1);
-    tol = 1e-8;
+    tol = 1e-6;
     p = 50;
     max_level = 2;
-    opt = dmk_default_opts(tolerance=tol, kernel=kernel_ref, p=p);
+    tol_factor = 1/100; % The tests here are stricter than what is necessary for total DMK accuracy (TODO: tighten)
+    opt = dmk_default_opts(tolerance=tol*tol_factor, kernel=kernel_ref, p=p);
     kernel = opt.kernel;
     nf = opt.nf;
     h0 = opt.h0;

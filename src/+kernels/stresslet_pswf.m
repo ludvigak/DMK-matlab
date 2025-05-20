@@ -6,6 +6,7 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
     end
 
     properties
+        p
         c_pswf
         c_self;
         gamma_hat;
@@ -26,17 +27,10 @@ classdef stresslet_pswf < kernels.StressletFourierSplit
                 obj.c_pswf = args.c_pswf;
             else
                 % Autoselect PSWF bandwidth
-                % TODO: need something better
-                for c_pswf=1:0.5:60
-                    psi = pswf(0, c_pswf);
-                    if abs(psi(1)) < args.tolerance
-                        break
-                    end
-                end
-                obj.c_pswf = c_pswf + 7; % Heuristic (probably too much, but needed for tests)
-                                         % c_pswf + 5 is enough to get interpolation working
-                fprintf('[stresslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
+                obj.c_pswf = pi/3*ceil(3/pi*(log10(args.tolerance)-0.69) / -0.39);
+                fprintf('[stokeslet_pswf] auto-selected c_pswf=%g\n', obj.c_pswf);
             end
+            obj.p = ceil(1.43*obj.c_pswf - 3.26);
             obj.Kmax = obj.c_pswf;
             b = biharmonic_pswf_split(obj.c_pswf);
             obj.gamma_hat = b.gamma_hat;
