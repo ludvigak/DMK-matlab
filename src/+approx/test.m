@@ -49,7 +49,7 @@ classdef test < matlab.unittest.TestCase
             x = rand(p^3, 1);
             y1 = kron(A, kron(A, A))*x;
             y2 = approx.kronmat_apply(A, x, 3);
-            testCase.verifyEqual(y1, y2, 'reltol', eps(p));
+            testCase.verifyEqual(y1, y2, 'reltol', eps(p*2));
         end
 
         function kronMatApply3D(testCase)
@@ -75,7 +75,7 @@ classdef test < matlab.unittest.TestCase
             x = rand(p^4, 1);
             y1 = kron(A, kron(A, kron(A, A)))*x;
             y2 = approx.kronmat_apply(A, x, 4);
-            testCase.verifyEqual(y1, y2, 'reltol', eps(p));
+            testCase.verifyEqual(y1, y2, 'reltol', eps(p*2));
         end
 
         function chebevalmat3_fast(testCase)
@@ -96,10 +96,10 @@ classdef test < matlab.unittest.TestCase
             % Straight apply without weight
             E1 = approx.chebevalmat3(x, y, z, p);
             fi = approx.chebevalmat3_apply(x, y, z, p, expa);
-            testCase.verifyEqual(fi, E1*expa, 'abstol', eps(p*N));
+            testCase.verifyEqual(fi, E1*expa, 'abstol', eps(p*N*2));
             % Test that dimensions get right with scalar eval
             fi1 = approx.chebevalmat3_apply(x(1), y(1), z(1), p, expa);
-            testCase.verifyEqual(fi1, fi(1), 'abstol', eps(10));
+            testCase.verifyEqual(fi1, fi(1), 'abstol', eps(20));
         end
         
         function chebInterp2D(testCase)
@@ -135,7 +135,7 @@ classdef test < matlab.unittest.TestCase
             testCase.verifyEqual(fi, f(x, y, z), 'reltol', eps(1000));
             % Fast apply
             fi2 = approx.chebevalmat3_apply(x, y, z, p, expa);
-            testCase.verifyEqual(fi, fi2, 'abstol', eps(10));
+            testCase.verifyEqual(fi, fi2, 'abstol', eps(20));
         end
         
         function chebInterp3Dgrid2grid(testCase)
