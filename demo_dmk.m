@@ -1,21 +1,27 @@
 clear; rng(1);
 
+%% Select a kernel
 %kernel = @kernels.laplace_ewald;
 %kernel = @kernels.laplace_pswf;
 %kernel = @kernels.stokeslet_hasimoto;
-%kernel = @kernels.stokeslet_pswf;
+kernel = @kernels.stokeslet_pswf;
 %kernel = @kernels.stresslet_hasimoto;
 %kernel = @kernels.stresslet_pswf;
 %kernel = @kernels.rotlet_ewald;
 %kernel = @kernels.rotlet_pswf;
 
-tol       = 1e-10;
-N         = 2000;
-max_level = 1;
-periodic  = false;
+%% Parameters
+tol       = 1e-10; % Tolerance
+N         = 2000;  % Number of poinst
+max_level = 2;     % Number of levels in octree
+periodic  = false; % Periodic boundary conditions?
 
+%% End options
+
+% Setup parameter struct
 dmk_opt = dmk_default_opts(tolerance=tol, verbose=true, kernel=kernel, periodic=periodic);
 
+% Setup problem
 points = rand(N, 3)-1/2;
 charges = rand(N, dmk_opt.kernel.dim_in)-1/2;
 if periodic
@@ -24,12 +30,16 @@ if periodic
     assert(all(abs(sum(charges)) < 1e-14))
 end
 
+
 disp("* DMK")
 atic = tic();
+% Initialize DMK
 dmk_state = dmk_init(points, max_level, dmk_opt);
+% Run DMK
 u_dmk     = dmk_apply(charges, dmk_state);
 toc(atic)
 
+% Compare against direct sum if problem is small enough
 if N <= 1e5
     atic = tic();
     if periodic
